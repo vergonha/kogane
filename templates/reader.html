@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}} — {{.Vol}}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center">
+
+  <header class="w-full flex justify-between items-center px-6 py-4 bg-gray-900 sticky top-0 z-10">
+    <a href="/" class="text-gray-400 hover:text-white transition text-sm">← Biblioteca</a>
+    <span class="text-sm font-medium text-gray-300">
+      {{.Title}} / {{.Vol}}
+    </span>
+    <span id="pageInfo" class="text-sm text-gray-500"></span>
+  </header>
+
+  <main class="flex flex-col items-center w-full py-6 gap-4">
+    <canvas id="pdfCanvas" class="max-w-full shadow-2xl rounded"></canvas>
+
+    <div class="flex gap-4 items-center mt-4">
+      <button id="prevBtn"
+              class="bg-gray-800 hover:bg-gray-700 disabled:opacity-30 transition px-5 py-2 rounded-lg">
+        ← Anterior
+      </button>
+      <span id="pageNum" class="text-gray-400 text-sm"></span>
+      <button id="nextBtn"
+              class="bg-gray-800 hover:bg-gray-700 disabled:opacity-30 transition px-5 py-2 rounded-lg">
+        Próxima →
+      </button>
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.mjs" type="module"></script>
+  <script type="module">
+    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.mjs';
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.worker.min.mjs';
+
+    const title = {{.Title | js}};
+    const vol   = {{.Vol   | js}};
+    const url   = `/pdf?title=${encodeURIComponent(title)}&vol=${encodeURIComponent(vol)}`;
+
+    const canvas  = document.getElementById('pdfCanvas');
+    const ctx     = canvas.getContext('2d');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageNum = document.getElementById('pageNum');
+    const pageInfo = document.getElementById('pageInfo');
+
+    let pdf = null;
+    let currentPage = 1;
+    let rendering = false;
+
+    async function renderPage(num) {
+      if (rendering) return;
+      rendering = true;
+
+      const page = await pdf.getPage(num);
+      // Escala para caber na largura da janela, respeitando DPR
+      const viewport = page.getViewport({
+        scale: (window.innerWidth * 0.92 * window.devicePixelRatio) / page.getViewport({ scale: 1 }).width
+      });
+
+      canvas.width  = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.width  = `${viewport.width  / window.devicePixelRatio}px`;
+      canvas.style.height = `${viewport.height / window.devicePixelRatio}px`;
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      rendering = false;
+      pageNum.textContent = `${num} / ${pdf.numPages}`;
+      pageInfo.textContent = `${num} / ${pdf.numPages}`;
+      prevBtn.disabled = num <= 1;
+      nextBtn.disabled = num >= pdf.numPages;
+    }
+
+    pdf = await pdfjsLib.getDocument(url).promise;
+    renderPage(currentPage);
+
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) renderPage(--currentPage);
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < pdf.numPages) renderPage(++currentPage);
+    });
+
+    // Navegação por teclado
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextBtn.click();
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevBtn.click();
+    });
+  </script>
+</body>
+</html>
