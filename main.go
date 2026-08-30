@@ -141,10 +141,12 @@ func initDB() error {
 		return err
 	}
 
-	_, err = db.Exec(
-		`INSERT OR IGNORE INTO users (username, hash) VALUES ('admin', ?)`,
-		string(hash),
-	)
+	_, err = db.Exec(`
+	    INSERT INTO users (username, hash)
+	    VALUES ('admin', ?)
+	    ON CONFLICT(username) DO UPDATE SET hash = excluded.hash
+	`, string(hash))
+
 	return err
 }
 
