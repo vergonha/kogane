@@ -5,9 +5,12 @@ import (
 	"crypto/subtle"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -19,12 +22,18 @@ import (
 )
 
 const (
-	dataDir     = "E:\\"
-	dbPath      = "./manga.db"
-	sessionName = "session_id"
-	addr        = ":8080"
-	bcryptCost  = 12
+	dataDir            = "E:\\"
+	dbPath             = "./manga.db"
+	sessionName        = "session_id"
+	addr               = ":8080"
+	bcryptCost         = 12
+	turnstileVerifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 )
+
+type turnstileResponse struct {
+	Success bool     `json:"success"`
+	Errors  []string `json:"error-codes"`
+}
 
 var (
 	db            *sql.DB
@@ -37,6 +46,64 @@ type Manga struct {
 	Volumes     []string
 	Cover       string
 	Description string
+}
+
+func verifyTurnstile(r *http.Request) bool {
+	secret := os.Getenv("CLOUDFLARE_TURNSTILE_SECRET_KEY")
+	if secret == "" {
+		log.Println("CLOUDFLARE_TURNSTILE_SECRET_KEY não configurada")
+		return false
+	}
+
+	token := r.FormValue("cf-turnstile-response")
+	if token == "" {
+		return false
+	}
+
+	form := url.Values{}
+	form.Set("secret", secret)
+	form.Set("response", token)
+
+	if ip, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		form.Set("remoteip", ip)
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		turnstileVerifyURL,
+		strings.NewReader(form.Encode()),
+	)
+	if err != nil {
+		return false
+	}
+
+	req.Header.Set(
+		"Content-Type",
+		"application/x-www-form-urlencoded",
+	)
+
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Turnstile: %v", err)
+		return false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return false
+	}
+
+	var result turnstileResponse
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return false
+	}
+
+	return result.Success
 }
 
 func initDB() error {
@@ -332,6 +399,11 @@ func requireCSRF(r *http.Request) bool {
 }
 
 func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
+	if !verifyTurnstile(r) {
+		http.Error(w, "CAPTCHA inválido", http.StatusUnauthorized)
+		return
+	}
+
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
@@ -381,8 +453,9 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 
 func handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	data := map[string]string{
-		"IP":        r.RemoteAddr,
-		"UserAgent": r.UserAgent(),
+		"IP":               r.RemoteAddr,
+		"UserAgent":        r.UserAgent(),
+		"TurnstileSiteKey": os.Getenv("CLOUDFLARE_TURNSTILE_SITE_KEY"),
 	}
 
 	renderTemplate(w, "login.html", data)
