@@ -485,6 +485,7 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err = db.Exec(`DELETE FROM sessions WHERE user_id = ?`, userID)
 	sessionID, _, err := newSession(userID)
 	if err != nil {
 		http.Error(w, "Erro interno", http.StatusInternalServerError)
