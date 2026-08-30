@@ -1,4 +1,4 @@
-module manga-server
+module kogane
 
 go 1.25.0
 
