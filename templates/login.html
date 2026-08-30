@@ -1,29 +1,61 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — MangaLib</title>
+  <title>{{.Title}} — {{.Vol}}</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-950 text-gray-100 flex items-center justify-center min-h-screen">
-  <form method="POST" action="/login"
-        class="bg-gray-900 p-8 rounded-2xl shadow-xl w-full max-w-sm space-y-4">
-    <h1 class="text-2xl font-bold text-center">📚 MangaLib</h1>
-    <div>
-      <label class="block text-sm text-gray-400 mb-1">Usuário</label>
-      <input name="username" type="text" required autofocus
-             class="w-full bg-gray-800 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+
+<body
+  class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between p-8 selection:bg-neutral-700 selection:text-white">
+
+  <!-- Conteúdo Central -->
+  <main class="flex flex-col items-center justify-center flex-grow gap-8">
+    <div style="-webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)))" ,>
+      <div class="w-full max-w-lg flex justify-center overflow-x-auto">
+        <pre
+          style="letter-spacing: 0px; white-space: pre; font-size: clamp(15px, 1.1vw, 12px); display: inline-block; min-width: max-content;"
+          class="text-neutral-500 select-none text-neutral-100">
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣄⠀⠀⠀⣦⣤⣾⣿⠿⠛⣋⣥⣤⣀⠀⠀⠀⠀
+⠀⠀⠀⠀⡤⡀⢈⢻⣬⣿⠟⢁⣤⣶⣿⣿⡿⠿⠿⠛⠛⢀⣄⠀
+⠀⠀⢢⣘⣿⣿⣶⣿⣯⣤⣾⣿⣿⣿⠟⠁⠄⠀⣾⡇⣼⢻⣿⣾
+⣰⠞⠛⢉⣩⣿⣿⣿⣿⣿⣿⣿⣿⠋⣼⣧⣤⣴⠟⣠⣿⢰⣿⣿
+⣶⡾⠿⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣈⣩⣤⡶⠟⢛⣩⣴⣿⣿⡟
+⣠⣄⠈⠀⣰⡦⠙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⡛⠛⠛⠁
+⣉⠛⠛⠛⣁⡔⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠥⠀⠀
+⣭⣏⣭⣭⣥⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢠
+      </pre>
+      </div>
     </div>
-    <div>
-      <label class="block text-sm text-gray-400 mb-1">Senha</label>
-      <input name="password" type="password" required
-             class="w-full bg-gray-800 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-    </div>
-    <button type="submit"
-            class="w-full bg-indigo-600 hover:bg-indigo-500 transition py-2 rounded-lg font-semibold">
-      Entrar
-    </button>
-  </form>
+
+    <!-- Formulário -->
+    <form class="w-full max-w-sm flex flex-col gap-4 text-sm" action="/login" method="POST">
+      <div class="flex items-center justify-between gap-4">
+        <label for="user" class="w-16 text-right text-neutral-400">user</label>
+        <input id="user" name="username" type="text" placeholder="john doe" required
+          class="flex-1 bg-neutral-800/50 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition" />
+      </div>
+
+      <div class="flex items-center justify-between gap-4">
+        <label for="passwd" class="w-16 text-right text-neutral-400">passwd</label>
+        <input id="passwd" name="password" type="password" placeholder="*******" required
+          class="flex-1 bg-neutral-800/50 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition" />
+      </div>
+
+      <!-- Botão invisível que ativa o envio ao pressionar Enter -->
+      <button type="submit" class="hidden"></button>
+    </form>
+  </main>
+
+  <footer class="text-xs text-neutral-500 flex flex-col md:flex-row justify-center items-center gap-1 md:gap-2">
+    <span>{{.IP}}</span>
+    <span class="hidden md:inline">|</span>
+    <span class="text-center truncate max-w-[90vw] md:max-w-none">{{.UserAgent}}</span>
+  </footer>
+
 </body>
+
 </html>

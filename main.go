@@ -26,8 +26,9 @@ const (
 )
 
 var (
-	db   *sql.DB
-	tmpl *template.Template
+	db            *sql.DB
+	tmpl          *template.Template
+	isDevelopment bool
 )
 
 type Manga struct {
@@ -104,13 +105,29 @@ func deleteSession(r *http.Request) {
 	db.Exec(`DELETE FROM sessions WHERE id = ?`, cookie.Value)
 }
 
+func renderTemplate(w http.ResponseWriter, name string, data any) error {
+	if isDevelopment {
+		t, err := template.ParseGlob("templates/*.html")
+		if err != nil {
+			return err
+		}
+
+		return t.ExecuteTemplate(w, name, data)
+	}
+
+	return renderTemplate(w, name, data)
+}
+
 func main() {
 	var err error
+
+	isDevelopment = os.Getenv("KOGANE_DEVELOPMENT") == "true"
 
 	db, err = sql.Open("sqlite3", "file:manga.db?_journal_mode=WAL&_busy_timeout=5000")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	if db == nil {
 		log.Fatal("db is nil")
 	}
@@ -122,9 +139,8 @@ func main() {
 	tmpl = template.Must(template.ParseGlob("templates/*.html"))
 
 	mux := http.NewServeMux()
-	/* Somente a página de Login */
+
 	mux.HandleFunc("GET /login", handleLoginPage)
-	/*  */
 	mux.HandleFunc("POST /login", handleLoginSubmit)
 	mux.HandleFunc("POST /logout", requireAuth(handleLogout))
 	mux.HandleFunc("GET /", requireAuth(handleDashboard))
@@ -132,6 +148,8 @@ func main() {
 	mux.HandleFunc("GET /pdf", requireAuth(handlePDF))
 
 	log.Printf("Servidor em %s", addr)
+	log.Printf("Development mode: %v", isDevelopment)
+
 	log.Fatal(http.ListenAndServe(addr, mux))
 }
 
@@ -188,7 +206,7 @@ func handleReader(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Parâmetros inválidos", http.StatusBadRequest)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "reader.html", map[string]string{
+	renderTemplate(w, "reader.html", map[string]string{
 		"Title": title,
 		"Vol":   vol,
 	})
@@ -200,7 +218,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Erro ao ler biblioteca", http.StatusInternalServerError)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "dashboard.html", mangas)
+	renderTemplate(w, "dashboard.html", mangas)
 }
 
 func handleLogout(w http.ResponseWriter, r *http.Request) {
@@ -274,8 +292,20 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLoginPage(w http.ResponseWriter, r *http.Request) {
+	ip := r.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		ip = r.Header.Get("X-Real-IP")
+	}
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
 
-	tmpl.ExecuteTemplate(w, "login.html", nil)
+	data := map[string]string{
+		"IP":        ip,
+		"UserAgent": r.UserAgent(),
+	}
+
+	renderTemplate(w, "login.html", data)
 }
 
 func scanLibrary(root string) ([]Manga, error) {
