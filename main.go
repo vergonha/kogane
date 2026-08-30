@@ -1,22 +1,26 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -38,8 +42,10 @@ var (
 	tmpl          *template.Template
 	isDevelopment bool
 	dummyHash     []byte
-	dataDir       string
 	addr          string
+	r2Client      *s3.Client
+	r2Bucket      string
+	cachedLibrary []Manga
 )
 
 type Manga struct {
@@ -200,18 +206,44 @@ func main() {
 		addr = ":8080"
 	}
 
-	dataDir = os.Getenv("KOGANE_DATA_PATH")
-	if dataDir == "" {
-		dataDir = "E:\\"
+	r2Bucket = os.Getenv("R2_BUCKET_NAME")
+	accountID := os.Getenv("R2_ACCOUNT_ID")
+	accessKey := os.Getenv("R2_ACCESS_KEY_ID")
+	secretKey := os.Getenv("R2_SECRET_ACCESS_KEY")
+
+	if r2Bucket == "" || accountID == "" || accessKey == "" || secretKey == "" {
+		log.Fatal("R2_BUCKET_NAME, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID e R2_SECRET_ACCESS_KEY devem estar configuradas")
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion("auto"),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			accessKey,
+			secretKey,
+			"",
+		)),
+	)
+	if err != nil {
+		log.Fatalf("Erro ao carregar config R2: %v", err)
+	}
+
+	// Instancia o cliente apontando diretamente para o endpoint do R2
+	r2URL := fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountID)
+	r2Client = s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(r2URL)
+	})
+
+	libData, err := os.ReadFile("library.json")
+	if err != nil {
+		log.Fatalf("Erro ao ler library.json: %v", err)
+	}
+	if err := json.Unmarshal(libData, &cachedLibrary); err != nil {
+		log.Fatalf("Erro ao parsear library.json: %v", err)
 	}
 
 	db, err = sql.Open("sqlite3", "file:manga.db?_journal_mode=WAL&_busy_timeout=5000")
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	if db == nil {
-		log.Fatal("db is nil")
 	}
 
 	if err = initDB(); err != nil {
@@ -226,7 +258,6 @@ func main() {
 	tmpl = template.Must(template.ParseGlob("templates/*.html"))
 
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("GET /login", handleLoginPage)
 	mux.HandleFunc("POST /login", handleLoginSubmit)
 	mux.HandleFunc("POST /logout", requireAuth(handleLogout))
@@ -236,8 +267,6 @@ func main() {
 	mux.HandleFunc("GET /cover", requireAuth(handleCover))
 
 	log.Printf("Servidor em %s", addr)
-	log.Printf("Development mode: %v", isDevelopment)
-
 	log.Fatal(http.ListenAndServe(addr, mux))
 }
 
@@ -245,15 +274,7 @@ func handlePDF(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Query().Get("title")
 	vol := r.URL.Query().Get("vol")
 
-	if title == "" || vol == "" {
-		http.Error(w, "Parâmetros inválidos", http.StatusBadRequest)
-		return
-	}
-
-	if strings.Contains(title, "..") ||
-		strings.Contains(vol, "..") ||
-		strings.ContainsAny(title, "/\\") ||
-		strings.ContainsAny(vol, "/\\") {
+	if !validLibraryComponent(title) || !validLibraryComponent(vol) {
 		http.Error(w, "Parâmetros inválidos", http.StatusBadRequest)
 		return
 	}
@@ -263,28 +284,21 @@ func handlePDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataDirAbs, err := filepath.Abs(dataDir)
+	key := title + "/" + vol
+
+	presignClient := s3.NewPresignClient(r2Client)
+
+	presignReq, err := presignClient.PresignGetObject(r.Context(), &s3.GetObjectInput{
+		Bucket: aws.String(r2Bucket),
+		Key:    aws.String(key),
+	}, s3.WithPresignExpires(15*time.Minute))
+
 	if err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Erro ao gerar link de download", http.StatusInternalServerError)
 		return
 	}
 
-	target := filepath.Join(dataDirAbs, title, vol)
-
-	// Validação do caminho final.
-	rel, err := filepath.Rel(dataDirAbs, target)
-	if err != nil {
-		http.Error(w, "Acesso negado", http.StatusForbidden)
-		return
-	}
-
-	if rel == ".." ||
-		strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
-		http.Error(w, "Acesso negado", http.StatusForbidden)
-		return
-	}
-
-	http.ServeFile(w, r, target)
+	http.Redirect(w, r, presignReq.URL, http.StatusTemporaryRedirect)
 }
 
 func handleReader(w http.ResponseWriter, r *http.Request) {
@@ -305,12 +319,6 @@ func handleReader(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDashboard(w http.ResponseWriter, r *http.Request) {
-	mangas, err := scanLibrary(dataDir)
-	if err != nil {
-		http.Error(w, "Erro ao ler biblioteca", http.StatusInternalServerError)
-		return
-	}
-
 	csrfToken, ok := getCSRFToken(r)
 	if !ok {
 		http.Error(w, "Sessão inválida", http.StatusUnauthorized)
@@ -318,7 +326,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, "dashboard.html", map[string]any{
-		"Mangas":    mangas,
+		"Mangas":    cachedLibrary,
 		"CSRFToken": csrfToken,
 	})
 }
@@ -427,7 +435,7 @@ func validLibraryComponent(s string) bool {
 		return false
 	}
 
-	return !strings.ContainsAny(s, `/\`)
+	return !strings.Contains(s, "..") && !strings.ContainsAny(s, `/\`)
 }
 
 func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
@@ -458,7 +466,6 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/* Nesse ponto a sessão já foi validada, a senha tá certa */
 	sessionID, _, err := newSession(userID)
 	if err != nil {
 		http.Error(w, "Erro interno", http.StatusInternalServerError)
@@ -479,8 +486,10 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLoginPage(w http.ResponseWriter, r *http.Request) {
+	ip := r.Header.Get("CF-Connecting-IP")
+
 	data := map[string]string{
-		"IP":               r.RemoteAddr,
+		"IP":               ip,
 		"UserAgent":        r.UserAgent(),
 		"TurnstileSiteKey": os.Getenv("CLOUDFLARE_TURNSTILE_SITE_KEY"),
 	}
@@ -488,146 +497,28 @@ func handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login.html", data)
 }
 
-func scanLibrary(root string) ([]Manga, error) {
-	entries, err := os.ReadDir(root)
-	if err != nil {
-		return nil, err
-	}
-
-	var mangas []Manga
-
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-
-		mangaDir := filepath.Join(root, e.Name())
-
-		vols, err := filepath.Glob(
-			filepath.Join(mangaDir, "*.pdf"),
-		)
-
-		if err != nil || len(vols) == 0 {
-			continue
-		}
-
-		sort.Strings(vols)
-
-		names := make([]string, len(vols))
-
-		for i, v := range vols {
-			names[i] = filepath.Base(v)
-		}
-
-		cover := ""
-
-		coverPath := filepath.Join(
-			mangaDir,
-			"cover.jpg",
-		)
-
-		if _, err := os.Stat(coverPath); err == nil {
-			cover = "/cover?title=" + e.Name()
-		}
-
-		description := ""
-
-		synopsisPath := filepath.Join(
-			mangaDir,
-			"sinopse.txt",
-		)
-
-		if data, err := os.ReadFile(synopsisPath); err == nil {
-			description = strings.TrimSpace(
-				string(data),
-			)
-		}
-
-		mangas = append(
-			mangas,
-			Manga{
-				Title:       e.Name(),
-				Volumes:     names,
-				Cover:       cover,
-				Description: description,
-			},
-		)
-	}
-
-	sort.Slice(
-		mangas,
-		func(i, j int) bool {
-			return strings.ToLower(
-				mangas[i].Title,
-			) < strings.ToLower(
-				mangas[j].Title,
-			)
-		},
-	)
-
-	return mangas, nil
-}
-
 func handleCover(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Query().Get("title")
 
-	if title == "" {
-		http.Error(
-			w,
-			"Parâmetros inválidos",
-			http.StatusBadRequest,
-		)
+	if !validLibraryComponent(title) {
+		http.Error(w, "Acesso negado", http.StatusForbidden)
 		return
 	}
 
-	if strings.Contains(title, "..") ||
-		strings.ContainsAny(title, "/\\") {
-		http.Error(
-			w,
-			"Acesso negado",
-			http.StatusForbidden,
-		)
-		return
-	}
+	key := title + "/cover.jpg"
 
-	dataDirAbs, err := filepath.Abs(dataDir)
+	presignClient := s3.NewPresignClient(r2Client)
+
+	presignReq, err := presignClient.PresignGetObject(r.Context(), &s3.GetObjectInput{
+		Bucket: aws.String(r2Bucket),
+		Key:    aws.String(key),
+	}, s3.WithPresignExpires(1*time.Hour))
+
 	if err != nil {
-		http.Error(
-			w,
-			"Erro interno",
-			http.StatusInternalServerError,
-		)
+		log.Fatal(err)
+		http.Error(w, "Erro ao gerar link da imagem", http.StatusInternalServerError)
 		return
 	}
 
-	target := filepath.Join(
-		dataDirAbs,
-		title,
-		"cover.jpg",
-	)
-
-	rel, err := filepath.Rel(
-		dataDirAbs,
-		target,
-	)
-
-	if err != nil ||
-		rel == ".." ||
-		strings.HasPrefix(
-			rel,
-			".."+string(os.PathSeparator),
-		) {
-		http.Error(
-			w,
-			"Acesso negado",
-			http.StatusForbidden,
-		)
-		return
-	}
-
-	http.ServeFile(
-		w,
-		r,
-		target,
-	)
+	http.Redirect(w, r, presignReq.URL, http.StatusTemporaryRedirect)
 }
