@@ -24,7 +24,7 @@
         </div>
 
         <form method="POST" action="/logout">
-        	<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
             <button class="text-neutral-500 hover:text-neutral-300 transition focus:outline-none">logout</button>
         </form>
     </header>
@@ -59,13 +59,14 @@
             <div class="flex-1 flex flex-col gap-4">
                 <div>
                     <h2 class="manga-title text-neutral-200 text-lg font-bold">{{.Title}}</h2>
-                    <p class="manga-desc text-xs text-neutral-500 mt-2 leading-relaxed max-w-2xl">
+                    <p class="manga-desc text-xs text-neutral-500 mt-2 leading-relaxed max-w-2xl line-clamp-3">
                         {{if .Description}}
                         {{.Description}}
                         {{else}}
                         Nenhuma descrição disponível ainda para este título.
                         {{end}}
                     </p>
+
                 </div>
 
                 <div class="space-y-2">
