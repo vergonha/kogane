@@ -1,0 +1,93 @@
+{{define "register.html"}}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ap0calypse ⋆.˚ ☾⭒.˚ reader</title>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/ap0/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/ap0/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/ap0/favicon-16x16.png">
+    <link rel="manifest" href="/ap0/site.webmanifest">
+
+    <meta name="description" content="are you going to see the rose in the vase or the dust on the table?">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body
+    class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between p-8 selection:bg-neutral-700 selection:text-white">
+
+    <main class="flex flex-col items-center justify-center flex-grow gap-8">
+
+        <div
+            style="-webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)))">
+
+            <div class="w-full max-w-lg flex justify-center overflow-x-auto">
+                <pre style="letter-spacing: 0px; white-space: pre; font-size: clamp(15px, 1.1vw, 12px); display: inline-block; min-width: max-content;"
+                    class="select-none text-neutral-100">
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣄⠀⠀⠀⣦⣤⣾⣿⠿⠛⣋⣥⣤⣀⠀⠀⠀⠀
+⠀⠀⠀⠀⡤⡀⢈⢻⣬⣿⠟⢁⣤⣶⣿⣿⡿⠿⠿⠛⠛⢀⣄⠀
+⠀⠀⢢⣘⣿⣿⣶⣿⣯⣤⣾⣿⣿⣿⠟⠁⠄⠀⣾⡇⣼⢻⣿⣾
+⣰⠞⠛⢉⣩⣿⣿⣿⣿⣿⣿⣿⣿⠋⣼⣧⣤⣴⠟⣠⣿⢰⣿⣿
+⣶⡾⠿⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣈⣩⣤⡶⠟⢛⣩⣴⣿⣿⡟
+⣠⣄⠈⠀⣰⡦⠙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⡛⠛⠛⠁
+⣉⠛⠛⠛⣁⡔⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠥⠀⠀
+⣭⣏⣭⣭⣥⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢠
+        </pre>
+            </div>
+        </div>
+
+        <form class="w-full max-w-sm flex flex-col gap-4 text-sm" action="/login" method="POST">
+
+            <div class="flex items-center justify-between gap-4">
+                <label for="username" class="w-24 text-right text-neutral-400">
+                    user
+                </label>
+
+                <input id="username" name="username" type="text" placeholder="john doe" autocomplete="username" required
+                    class="flex-1 bg-neutral-800/50 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition" />
+            </div>
+
+            <div class="flex items-center justify-between gap-4">
+                <label for="password" class="w-24 text-right text-neutral-400">
+                    passwd
+                </label>
+
+                <input id="password" name="password" type="password" placeholder="*******" autocomplete="new-password"
+                    required
+                    class="flex-1 bg-neutral-800/50 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition" />
+            </div>
+
+            <div class="flex items-center justify-between gap-4">
+                <label for="password_confirm" class="w-24 text-right text-neutral-400">
+                    confirm
+                </label>
+
+                <input id="password_confirm" name="password_confirm" type="password" placeholder="*******"
+                    autocomplete="new-password" required
+                    class="flex-1 bg-neutral-800/50 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition" />
+            </div>
+
+            <p class="text-center text-xs text-neutral-600 mt-2">
+                primeiro acesso · criar administrador
+            </p>
+            <button type="submit" class="hidden"></button>
+        </form>
+    </main>
+
+    <footer class="text-xs text-neutral-500 flex flex-col md:flex-row justify-center items-center gap-1 md:gap-2">
+
+        <span>{{.IP}}</span>
+
+        <span class="hidden md:inline">|</span>
+    </footer>
+
+</body>
+
+</html>
+{{end}}

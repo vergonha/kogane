@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -51,8 +52,14 @@ func (h *Handler) render(
 }
 
 func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+	adminExists, err := h.Auth.AdminExists()
+	if err != nil {
+		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		return
+	}
+
+	if !adminExists {
+		h.render(w, "register.html", map[string]string{})
 		return
 	}
 
@@ -69,6 +76,17 @@ func (h *Handler) LoginSubmit(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
+	adminExists, err := h.Auth.AdminExists()
+	if err != nil {
+		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		return
+	}
+
+	if !adminExists {
+		h.registerInitialAdmin(w, r)
+		return
+	}
+
 	if !h.Turnstile.Verify(r) {
 		http.Error(w, "CAPTCHA inválido", http.StatusUnauthorized)
 		return
@@ -98,6 +116,56 @@ func (h *Handler) LoginSubmit(
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
+func (h *Handler) registerInitialAdmin(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+	confirm := r.FormValue("password_confirm")
+
+	created, err := h.Auth.CreateInitialAdmin(
+		username,
+		password,
+		confirm,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, auth.ErrInvalidRegistration):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, auth.ErrPasswordsDoNotMatch):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(
+				w,
+				"Não foi possível criar o admin",
+				http.StatusConflict,
+			)
+		}
+		return
+	}
+
+	if !created {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	userID, err := h.Auth.Authenticate(username, password)
+	if err != nil {
+		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		return
+	}
+
+	sessionID, _, err := h.Auth.NewSession(userID)
+	if err != nil {
+		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		return
+	}
+
+	h.Auth.SetSessionCookie(w, sessionID)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if !h.Auth.RequireCSRF(r) {
 		http.Error(w, "CSRF inválido", http.StatusForbidden)
@@ -107,5 +175,5 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	h.Auth.DeleteSession(r)
 	h.Auth.ClearSessionCookie(w)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }

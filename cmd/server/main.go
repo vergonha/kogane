@@ -33,14 +33,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := database.EnsureAdminUser(
-		db,
-		cfg.AdminPass,
-		cfg.BcryptCost,
-	); err != nil {
-		log.Fatal(err)
-	}
-
 	renderer, err := apptemplates.New(
 		cfg.TemplatesGlob,
 		cfg.Development,
@@ -90,6 +82,7 @@ func main() {
 	router := apphttp.NewRouter(h, authService)
 
 	log.Printf("Servidor em %s", cfg.Addr)
+	log.Printf("Modo desenvolvimento: %v", cfg.Development)
 	log.Fatal(http.ListenAndServe(cfg.Addr, router))
 }
 

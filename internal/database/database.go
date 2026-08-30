@@ -25,7 +25,8 @@ func Init(db *sql.DB) error {
 		CREATE TABLE IF NOT EXISTS users (
 			id       INTEGER PRIMARY KEY,
 			username TEXT UNIQUE NOT NULL,
-			hash     TEXT NOT NULL
+			hash     TEXT NOT NULL,
+			is_admin INTEGER NOT NULL DEFAULT 0
 		);
 
 		CREATE TABLE IF NOT EXISTS sessions (
@@ -35,6 +36,9 @@ func Init(db *sql.DB) error {
 			csrf_token TEXT NOT NULL
 		);
 	`)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return ensureUsersSchema(db)
 }
