@@ -22,10 +22,8 @@ import (
 )
 
 const (
-	dataDir            = "E:\\"
 	dbPath             = "./manga.db"
 	sessionName        = "session_id"
-	addr               = ":8080"
 	bcryptCost         = 12
 	turnstileVerifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 )
@@ -40,6 +38,8 @@ var (
 	tmpl          *template.Template
 	isDevelopment bool
 	dummyHash     []byte
+	dataDir       string
+	addr          string
 )
 
 type Manga struct {
@@ -194,6 +194,16 @@ func main() {
 	var err error
 
 	isDevelopment = os.Getenv("KOGANE_DEVELOPMENT") == "true"
+
+	addr = os.Getenv("KOGANE_SERVER_PORT")
+	if addr == "" {
+		addr = ":8080"
+	}
+
+	dataDir = os.Getenv("KOGANE_DATA_PATH")
+	if dataDir == "" {
+		dataDir = "E:\\"
+	}
 
 	db, err = sql.Open("sqlite3", "file:manga.db?_journal_mode=WAL&_busy_timeout=5000")
 	if err != nil {
