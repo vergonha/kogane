@@ -155,6 +155,7 @@ func getSessionUserID(r *http.Request) (int64, bool) {
 	if err != nil {
 		return 0, false
 	}
+
 	var userID int64
 	var expires int64
 	err = db.QueryRow(
@@ -162,8 +163,10 @@ func getSessionUserID(r *http.Request) (int64, bool) {
 		cookie.Value,
 	).Scan(&userID, &expires)
 	if err != nil || time.Now().Unix() > expires {
+		_, _ = db.Exec(`DELETE FROM sessions WHERE id = ?`, cookie.Value)
 		return 0, false
 	}
+
 	return userID, true
 }
 
@@ -251,6 +254,20 @@ func main() {
 	if err = initDB(); err != nil {
 		log.Fatal(err)
 	}
+
+	go func() {
+		ticker := time.NewTicker(15 * time.Minute)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			if _, err := db.Exec(
+				`DELETE FROM sessions WHERE expires_at <= ?`,
+				time.Now().Unix(),
+			); err != nil {
+				log.Printf("session cleanup: %v", err)
+			}
+		}
+	}()
 
 	dummyHash, err = bcrypt.GenerateFromPassword([]byte("dummy-kogane"), bcryptCost)
 	if err != nil {
