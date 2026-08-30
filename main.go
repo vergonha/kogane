@@ -515,7 +515,7 @@ func handleCover(w http.ResponseWriter, r *http.Request) {
 	}, s3.WithPresignExpires(1*time.Hour))
 
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("erro ao gerar link da imagem: %v", err)
 		http.Error(w, "Erro ao gerar link da imagem", http.StatusInternalServerError)
 		return
 	}
