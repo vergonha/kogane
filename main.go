@@ -39,6 +39,7 @@ var (
 	db            *sql.DB
 	tmpl          *template.Template
 	isDevelopment bool
+	dummyHash     []byte
 )
 
 type Manga struct {
@@ -204,6 +205,11 @@ func main() {
 	}
 
 	if err = initDB(); err != nil {
+		log.Fatal(err)
+	}
+
+	dummyHash, err = bcrypt.GenerateFromPassword([]byte("dummy-kogane"), bcryptCost)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -410,12 +416,6 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var userID int64
 	var hash string
-	var dummyHash []byte
-
-	dummyHash, err = bcrypt.GenerateFromPassword([]byte("dummy-kogane"), bcryptCost)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	err = db.QueryRow(
 		`SELECT id, hash FROM users WHERE username = ?`, username,
