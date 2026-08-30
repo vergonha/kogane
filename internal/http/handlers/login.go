@@ -51,6 +51,11 @@ func (h *Handler) render(
 }
 
 func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
 	data := map[string]string{
 		"IP":               r.Header.Get("CF-Connecting-IP"),
 		"UserAgent":        r.UserAgent(),
@@ -90,7 +95,7 @@ func (h *Handler) LoginSubmit(
 	}
 
 	h.Auth.SetSessionCookie(w, sessionID)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -102,5 +107,5 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	h.Auth.DeleteSession(r)
 	h.Auth.ClearSessionCookie(w)
 
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -11,14 +11,14 @@ import (
 func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /login", h.LoginPage)
-	mux.HandleFunc("POST /login", h.LoginSubmit)
+	mux.HandleFunc("GET /", h.LoginPage)
+	mux.HandleFunc("POST /", h.LoginSubmit)
 	mux.HandleFunc(
 		"POST /logout",
 		httpmw.RequireAuth(authService, h.Logout),
 	)
 	mux.HandleFunc(
-		"GET /",
+		"GET /dashboard",
 		httpmw.RequireAuth(authService, h.Dashboard),
 	)
 	mux.HandleFunc(
