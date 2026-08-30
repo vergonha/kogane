@@ -34,5 +34,13 @@ func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 		httpmw.RequireAuth(authService, h.Cover),
 	)
 
+	mux.Handle(
+		"GET /ap0/",
+		http.StripPrefix(
+			"/ap0/",
+			http.FileServer(http.Dir("./static")),
+		),
+	)
+
 	return mux
 }
