@@ -463,6 +463,7 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		Secure:   !isDevelopment,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int((2 * time.Hour).Seconds()),
+		Expires:  time.Now().Add(2 * time.Hour),
 	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
