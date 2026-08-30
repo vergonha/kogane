@@ -2,161 +2,184 @@
 <html lang="pt-BR">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MangaLib — Biblioteca</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ap0calypse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between p-8 selection:bg-neutral-700 selection:text-white">
+<body
+    class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between p-8 selection:bg-neutral-700 selection:text-white">
 
-  <header class="max-w-5xl w-full mx-auto flex flex-col sm:flex-row gap-4 justify-between items-center border-b border-neutral-800/60 pb-6 mb-8 text-sm">
-    <div class="flex items-center gap-2">
-      <span class="text-neutral-400">lib::</span>
-      <h1 class="text-neutral-100 font-bold">MangaLib</h1>
-    </div>
-    
-    <div class="relative w-full sm:w-64">
-      <input id="search-input" type="text" placeholder="filtrar acervo..." 
-        class="w-full bg-neutral-800/30 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition" />
-    </div>
-
-    <form method="POST" action="/logout">
-      <button class="text-neutral-500 hover:text-neutral-300 transition focus:outline-none">logout</button>
-    </form>
-  </header>
-
-  <main id="manga-list" class="max-w-5xl w-full mx-auto flex-grow space-y-12">
-    {{range .}}
-    <section class="manga-item flex flex-col md:flex-row gap-6 border-b border-neutral-800/40 pb-8 last:border-b-0" data-title="{{.Title}}">
-      
-      <div class="w-full md:w-40 h-56 bg-neutral-800/40 border border-neutral-800 rounded flex flex-col items-center justify-center text-neutral-600 shrink-0 select-none">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-8 h-8 mb-2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-        </svg>
-        <span class="text-[10px] uppercase tracking-wider">sem capa</span>
-      </div>
-
-      <div class="flex-1 flex flex-col gap-4">
-        <div>
-          <h2 class="manga-title text-neutral-200 text-lg font-bold">{{.Title}}</h2>
-          <p class="manga-desc text-xs text-neutral-500 mt-2 leading-relaxed max-w-2xl">
-            Nenhuma descrição disponível ainda para este título. Adicione uma sinopse em seus metadados para que apareça listada nesta seção.
-          </p>
+    <header
+        class="max-w-5xl w-full mx-auto flex flex-col sm:flex-row gap-4 justify-between items-center border-b border-neutral-800/60 pb-6 mb-8 text-sm">
+        <div class="flex items-center gap-2">
+            <span class="text-neutral-400">lib::</span>
+            <h1 class="text-neutral-100 font-bold">ap0calypse</h1>
         </div>
 
-        <div class="space-y-2">
-          <span class="text-xs text-neutral-600 uppercase tracking-wider">volumes disponíveis</span>
-          <div class="flex flex-wrap gap-2">
-            {{$title := .Title}}
-            {{range .Volumes}}
-            <a href="/read?title={{$title}}&vol={{.}}"
-               class="bg-neutral-800/30 border border-neutral-800/80 hover:border-neutral-600/80 text-neutral-300 hover:text-white transition px-3 py-1.5 rounded text-xs">
-              {{printf "%02s" .}}
-            </a>
+        <div class="relative w-full sm:w-64">
+            <input id="search-input" type="text" placeholder="filtrar acervo..."
+                class="w-full bg-neutral-800/30 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition" />
+        </div>
+
+        <form method="POST" action="/logout">
+            <button class="text-neutral-500 hover:text-neutral-300 transition focus:outline-none">logout</button>
+        </form>
+    </header>
+
+    <main id="manga-list" class="max-w-5xl w-full mx-auto flex-grow space-y-12">
+        {{range .}}
+        <section class="manga-item flex flex-col md:flex-row gap-6 border-b border-neutral-800/40 pb-8 last:border-b-0"
+            data-title="{{.Title}}">
+
+            {{if .Cover}}
+            <div
+                class="w-full md:w-40 h-56 bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden shrink-0">
+                <img src="{{.Cover}}" alt="Capa de {{.Title}}" class="w-full h-full object-cover" loading="lazy" />
+            </div>
+            {{else}}
+            <div
+                class="w-full md:w-40 h-56 bg-neutral-800/40 border border-neutral-800 rounded flex flex-col items-center justify-center text-neutral-600 shrink-0 select-none">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1"
+                    stroke="currentColor" class="w-8 h-8 mb-2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                </svg>
+
+                <span class="text-[10px] uppercase tracking-wider">
+                    sem capa
+                </span>
+            </div>
             {{end}}
-          </div>
+
+            </div>
+
+            <div class="flex-1 flex flex-col gap-4">
+                <div>
+                    <h2 class="manga-title text-neutral-200 text-lg font-bold">{{.Title}}</h2>
+                    <p class="manga-desc text-xs text-neutral-500 mt-2 leading-relaxed max-w-2xl">
+                        {{if .Description}}
+                        {{.Description}}
+                        {{else}}
+                        Nenhuma descrição disponível ainda para este título.
+                        {{end}}
+                    </p>
+                </div>
+
+                <div class="space-y-2">
+                    <span class="text-xs text-neutral-600 uppercase tracking-wider">volumes disponíveis</span>
+                    <div class="flex flex-wrap gap-2">
+                        {{$title := .Title}}
+                        {{range .Volumes}}
+                        <a href="/read?title={{$title}}&vol={{.}}"
+                            class="bg-neutral-800/30 border border-neutral-800/80 hover:border-neutral-600/80 text-neutral-300 hover:text-white transition px-3 py-1.5 rounded text-xs">
+                            {{printf "%02s" .}}
+                        </a>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+
+        </section>
+        {{else}}
+        <div class="text-center py-20">
+            <p class="text-neutral-600 text-sm">Nenhum mangá encontrado em /data.</p>
         </div>
-      </div>
+        {{end}}
 
-    </section>
-    {{else}}
-    <div class="text-center py-20">
-      <p class="text-neutral-600 text-sm">Nenhum mangá encontrado em /data.</p>
-    </div>
-    {{end}}
-    
-    <div id="no-results" class="hidden text-center py-20">
-      <p class="text-neutral-600 text-sm">Nenhum resultado encontrado para a pesquisa.</p>
-    </div>
-  </main>
+        <div id="no-results" class="hidden text-center py-20">
+            <p class="text-neutral-600 text-sm">Nenhum resultado encontrado para a pesquisa.</p>
+        </div>
+    </main>
 
-  <footer class="text-[10px] text-neutral-600 flex flex-col md:flex-row justify-center items-center gap-1 md:gap-2 mt-12 pt-6 border-t border-neutral-800/40">
-    <span>MangaLib v1.0.0</span>
-    <span class="hidden md:inline">|</span>
-    <span>{{len .}} títulos carregados</span>
-  </footer>
+    <footer
+        class="text-[10px] text-neutral-600 flex flex-col md:flex-row justify-center items-center gap-1 md:gap-2 mt-12 pt-6 border-t border-neutral-800/40">
+        <span>ap0calypse v1.0.0</span>
+        <span class="hidden md:inline">|</span>
+        <span>{{len .}} títulos carregados</span>
+    </footer>
 
-  <!-- Lógica de busca com Matcher Textual -->
-  <script>
-    const searchInput = document.getElementById('search-input');
-    const mangaItems = Array.from(document.querySelectorAll('.manga-item'));
-    const noResults = document.getElementById('no-results');
+    <!-- Lógica de busca com Matcher Textual -->
+    <script>
+        const searchInput = document.getElementById('search-input');
+        const mangaItems = Array.from(document.querySelectorAll('.manga-item'));
+        const noResults = document.getElementById('no-results');
 
-    function normalizeText(text) {
-      return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    }
-
-    function getMatchScore(query, target) {
-      if (!query) return 1;
-      const q = normalizeText(query);
-      const t = normalizeText(target);
-      
-      if (t === q) return 100; // Match exato
-      if (t.startsWith(q)) return 80; // Prefixo
-      
-      const index = t.indexOf(q);
-      if (index !== -1) {
-        return 50 - index; 
-      }
-      
-      let score = 0;
-      let qIdx = 0;
-      for (let i = 0; i < t.length; i++) {
-        if (t[i] === q[qIdx]) {
-          score++;
-          qIdx++;
-          if (qIdx === q.length) return score + 10;
+        function normalizeText(text) {
+            return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
         }
-      }
-      
-      return 0;
-    }
 
-    searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.trim();
-      let hasVisible = false;
+        function getMatchScore(query, target) {
+            if (!query) return 1;
+            const q = normalizeText(query);
+            const t = normalizeText(target);
 
-      if (!query) {
-        mangaItems.forEach(item => {
-          item.style.display = '';
-          item.style.order = '';
+            if (t === q) return 100; // Match exato
+            if (t.startsWith(q)) return 80; // Prefixo
+
+            const index = t.indexOf(q);
+            if (index !== -1) {
+                return 50 - index;
+            }
+
+            let score = 0;
+            let qIdx = 0;
+            for (let i = 0; i < t.length; i++) {
+                if (t[i] === q[qIdx]) {
+                    score++;
+                    qIdx++;
+                    if (qIdx === q.length) return score + 10;
+                }
+            }
+
+            return 0;
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            let hasVisible = false;
+
+            if (!query) {
+                mangaItems.forEach(item => {
+                    item.style.display = '';
+                    item.style.order = '';
+                });
+                noResults.classList.add('hidden');
+                return;
+            }
+
+            const scoredItems = mangaItems.map(item => {
+                const title = item.getAttribute('data-title') || '';
+                const desc = item.querySelector('.manga-desc')?.textContent || '';
+
+                const titleScore = getMatchScore(query, title) * 2;
+                const descScore = getMatchScore(query, desc);
+                const finalScore = Math.max(titleScore, descScore);
+
+                return { item, score: finalScore };
+            });
+
+            scoredItems.forEach(({ item, score }) => {
+                if (score > 0) {
+                    item.style.display = '';
+                    item.style.order = -Math.round(score);
+                    hasVisible = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            const container = document.getElementById('manga-list');
+            if (hasVisible) {
+                container.classList.add('flex', 'flex-col');
+                noResults.classList.add('hidden');
+            } else {
+                container.classList.remove('flex', 'flex-col');
+                noResults.classList.remove('hidden');
+            }
         });
-        noResults.classList.add('hidden');
-        return;
-      }
-
-      const scoredItems = mangaItems.map(item => {
-        const title = item.getAttribute('data-title') || '';
-        const desc = item.querySelector('.manga-desc')?.textContent || '';
-        
-        const titleScore = getMatchScore(query, title) * 2;
-        const descScore = getMatchScore(query, desc);
-        const finalScore = Math.max(titleScore, descScore);
-
-        return { item, score: finalScore };
-      });
-
-      scoredItems.forEach(({ item, score }) => {
-        if (score > 0) {
-          item.style.display = '';
-          item.style.order = -Math.round(score);
-          hasVisible = true;
-        } else {
-          item.style.display = 'none';
-        }
-      });
-
-      const container = document.getElementById('manga-list');
-      if (hasVisible) {
-        container.classList.add('flex', 'flex-col');
-        noResults.classList.add('hidden');
-      } else {
-        container.classList.remove('flex', 'flex-col');
-        noResults.classList.remove('hidden');
-      }
-    });
-  </script>
+    </script>
 
 </body>
 

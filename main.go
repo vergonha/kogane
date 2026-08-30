@@ -32,8 +32,10 @@ var (
 )
 
 type Manga struct {
-	Title   string
-	Volumes []string
+	Title       string
+	Volumes     []string
+	Cover       string
+	Description string
 }
 
 func initDB() error {
@@ -115,7 +117,7 @@ func renderTemplate(w http.ResponseWriter, name string, data any) error {
 		return t.ExecuteTemplate(w, name, data)
 	}
 
-	return renderTemplate(w, name, data)
+	return tmpl.ExecuteTemplate(w, name, data)
 }
 
 func main() {
@@ -146,6 +148,7 @@ func main() {
 	mux.HandleFunc("GET /", requireAuth(handleDashboard))
 	mux.HandleFunc("GET /read", requireAuth(handleReader))
 	mux.HandleFunc("GET /pdf", requireAuth(handlePDF))
+	mux.HandleFunc("GET /cover", requireAuth(handleCover))
 
 	log.Printf("Servidor em %s", addr)
 	log.Printf("Development mode: %v", isDevelopment)
@@ -254,15 +257,22 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
+	var err error
 	var userID int64
 	var hash string
+	var dummyHash []byte
 
-	err := db.QueryRow(
+	dummyHash, err = bcrypt.GenerateFromPassword([]byte("dummy-kogane"), bcryptCost)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.QueryRow(
 		`SELECT id, hash FROM users WHERE username = ?`, username,
 	).Scan(&userID, &hash)
 
 	if err != nil {
-		bcrypt.CompareHashAndPassword([]byte("aiquenaoseioquelaexemplo123"), []byte(password))
+		bcrypt.CompareHashAndPassword(dummyHash, []byte(password))
 		http.Error(w, "Credenciais inválidas", http.StatusUnauthorized)
 		return
 	}
@@ -284,7 +294,7 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
-		// Secure:   true, // requer HTTPS; remova só em dev local
+		Secure:   !isDevelopment,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int((2 * time.Hour).Seconds()),
 	})
@@ -292,16 +302,8 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLoginPage(w http.ResponseWriter, r *http.Request) {
-	ip := r.Header.Get("X-Forwarded-For")
-	if ip == "" {
-		ip = r.Header.Get("X-Real-IP")
-	}
-	if ip == "" {
-		ip = r.RemoteAddr
-	}
-
 	data := map[string]string{
-		"IP":        ip,
+		"IP":        r.RemoteAddr,
 		"UserAgent": r.UserAgent(),
 	}
 
@@ -311,26 +313,143 @@ func handleLoginPage(w http.ResponseWriter, r *http.Request) {
 func scanLibrary(root string) ([]Manga, error) {
 	entries, err := os.ReadDir(root)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
 	var mangas []Manga
+
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
 		}
-		vols, err := filepath.Glob(filepath.Join(root, e.Name(), "*.pdf"))
+
+		mangaDir := filepath.Join(root, e.Name())
+
+		vols, err := filepath.Glob(
+			filepath.Join(mangaDir, "*.pdf"),
+		)
+
 		if err != nil || len(vols) == 0 {
 			continue
 		}
+
 		sort.Strings(vols)
-		// Guarda só o nome do arquivo, não o path completo
+
 		names := make([]string, len(vols))
+
 		for i, v := range vols {
 			names[i] = filepath.Base(v)
 		}
-		mangas = append(mangas, Manga{Title: e.Name(), Volumes: names})
+
+		cover := ""
+
+		coverPath := filepath.Join(
+			mangaDir,
+			"cover.jpg",
+		)
+
+		if _, err := os.Stat(coverPath); err == nil {
+			cover = "/cover?title=" + e.Name()
+		}
+
+		description := ""
+
+		synopsisPath := filepath.Join(
+			mangaDir,
+			"sinopse.txt",
+		)
+
+		if data, err := os.ReadFile(synopsisPath); err == nil {
+			description = strings.TrimSpace(
+				string(data),
+			)
+		}
+
+		mangas = append(
+			mangas,
+			Manga{
+				Title:       e.Name(),
+				Volumes:     names,
+				Cover:       cover,
+				Description: description,
+			},
+		)
 	}
+
+	sort.Slice(
+		mangas,
+		func(i, j int) bool {
+			return strings.ToLower(
+				mangas[i].Title,
+			) < strings.ToLower(
+				mangas[j].Title,
+			)
+		},
+	)
+
 	return mangas, nil
+}
+
+func handleCover(w http.ResponseWriter, r *http.Request) {
+	title := r.URL.Query().Get("title")
+
+	if title == "" {
+		http.Error(
+			w,
+			"Parâmetros inválidos",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	if strings.Contains(title, "..") ||
+		strings.ContainsAny(title, "/\\") {
+		http.Error(
+			w,
+			"Acesso negado",
+			http.StatusForbidden,
+		)
+		return
+	}
+
+	dataDirAbs, err := filepath.Abs(dataDir)
+	if err != nil {
+		http.Error(
+			w,
+			"Erro interno",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	target := filepath.Join(
+		dataDirAbs,
+		title,
+		"cover.jpg",
+	)
+
+	rel, err := filepath.Rel(
+		dataDirAbs,
+		target,
+	)
+
+	if err != nil ||
+		rel == ".." ||
+		strings.HasPrefix(
+			rel,
+			".."+string(os.PathSeparator),
+		) {
+		http.Error(
+			w,
+			"Acesso negado",
+			http.StatusForbidden,
+		)
+		return
+	}
+
+	http.ServeFile(
+		w,
+		r,
+		target,
+	)
 }
