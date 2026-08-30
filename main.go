@@ -280,10 +280,14 @@ func handlePDF(w http.ResponseWriter, r *http.Request) {
 func handleReader(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Query().Get("title")
 	vol := r.URL.Query().Get("vol")
-	if title == "" || vol == "" {
+
+	if !validLibraryComponent(title) ||
+		!validLibraryComponent(vol) ||
+		!strings.HasSuffix(strings.ToLower(vol), ".pdf") {
 		http.Error(w, "Parâmetros inválidos", http.StatusBadRequest)
 		return
 	}
+
 	renderTemplate(w, "reader.html", map[string]string{
 		"Title": title,
 		"Vol":   vol,
@@ -402,6 +406,18 @@ func requireCSRF(r *http.Request) bool {
 		[]byte(expected),
 		[]byte(token),
 	) == 1
+}
+
+func validLibraryComponent(s string) bool {
+	if s == "" {
+		return false
+	}
+
+	if s == "." || s == ".." {
+		return false
+	}
+
+	return !strings.ContainsAny(s, `/\`)
 }
 
 func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
