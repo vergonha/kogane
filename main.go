@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"database/sql"
 	"encoding/hex"
 	"html/template"
@@ -48,7 +49,8 @@ func initDB() error {
 		CREATE TABLE IF NOT EXISTS sessions (
 			id         TEXT PRIMARY KEY,
 			user_id    INTEGER NOT NULL,
-			expires_at INTEGER NOT NULL
+			expires_at INTEGER NOT NULL,
+			csrf_token TEXT NOT NULL
 		);
 	`)
 	if err != nil {
@@ -57,7 +59,7 @@ func initDB() error {
 
 	pass := os.Getenv("KOGANE_ADMIN_PASS")
 	if pass == "" {
-		pass = "KOGANE"
+		log.Fatal("KOGANE_ADMIN_PASS não configurada")
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(pass), bcryptCost)
@@ -221,10 +223,25 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Erro ao ler biblioteca", http.StatusInternalServerError)
 		return
 	}
-	renderTemplate(w, "dashboard.html", mangas)
+
+	csrfToken, ok := getCSRFToken(r)
+	if !ok {
+		http.Error(w, "Sessão inválida", http.StatusUnauthorized)
+		return
+	}
+
+	renderTemplate(w, "dashboard.html", map[string]any{
+		"Mangas":    mangas,
+		"CSRFToken": csrfToken,
+	})
 }
 
 func handleLogout(w http.ResponseWriter, r *http.Request) {
+	if !requireCSRF(r) {
+		http.Error(w, "CSRF inválido", http.StatusForbidden)
+		return
+	}
+
 	deleteSession(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:   sessionName,
@@ -235,22 +252,83 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
-func newSession(userID int64) (string, error) {
-	b := make([]byte, 32)
-
-	/* Revisar */
-	if _, err := rand.Read(b); err != nil {
-		return "", err
+func newSession(userID int64) (string, string, error) {
+	sessionBytes := make([]byte, 32)
+	if _, err := rand.Read(sessionBytes); err != nil {
+		return "", "", err
 	}
 
-	id := hex.EncodeToString(b)
+	csrfBytes := make([]byte, 32)
+	if _, err := rand.Read(csrfBytes); err != nil {
+		return "", "", err
+	}
+
+	sessionID := hex.EncodeToString(sessionBytes)
+	csrfToken := hex.EncodeToString(csrfBytes)
 	expires := time.Now().Add(2 * time.Hour).Unix()
 
-	_, err := db.Exec(
-		`INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)`,
-		id, userID, expires,
-	)
-	return id, err
+	_, err := db.Exec(`
+		INSERT INTO sessions
+			(id, user_id, expires_at, csrf_token)
+		VALUES (?, ?, ?, ?)
+	`, sessionID, userID, expires, csrfToken)
+
+	if err != nil {
+		return "", "", err
+	}
+
+	return sessionID, csrfToken, nil
+}
+
+func getCSRFToken(r *http.Request) (string, bool) {
+	cookie, err := r.Cookie(sessionName)
+	if err != nil {
+		return "", false
+	}
+
+	var token string
+	var expires int64
+
+	err = db.QueryRow(`
+		SELECT csrf_token, expires_at
+		FROM sessions
+		WHERE id = ?
+	`, cookie.Value).Scan(&token, &expires)
+
+	if err != nil || token == "" || time.Now().Unix() > expires {
+		return "", false
+	}
+
+	return token, true
+}
+
+func requireCSRF(r *http.Request) bool {
+	cookie, err := r.Cookie(sessionName)
+	if err != nil {
+		return false
+	}
+
+	token := r.FormValue("csrf_token")
+	if token == "" {
+		return false
+	}
+
+	var expected string
+
+	err = db.QueryRow(`
+		SELECT csrf_token
+		FROM sessions
+		WHERE id = ?
+	`, cookie.Value).Scan(&expected)
+
+	if err != nil || expected == "" {
+		return false
+	}
+
+	return subtle.ConstantTimeCompare(
+		[]byte(expected),
+		[]byte(token),
+	) == 1
 }
 
 func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
@@ -283,7 +361,7 @@ func handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/* Nesse ponto a sessão já foi validada, a senha tá certa */
-	sessionID, err := newSession(userID)
+	sessionID, _, err := newSession(userID)
 	if err != nil {
 		http.Error(w, "Erro interno", http.StatusInternalServerError)
 		return

@@ -24,6 +24,7 @@
         </div>
 
         <form method="POST" action="/logout">
+        	<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
             <button class="text-neutral-500 hover:text-neutral-300 transition focus:outline-none">logout</button>
         </form>
     </header>
