@@ -3,6 +3,7 @@ package library
 import (
 	"encoding/json"
 	"os"
+	"slices"
 	"strings"
 )
 
@@ -21,7 +22,19 @@ func Load(path string) (*Service, error) {
 		return nil, err
 	}
 
-	return &Service{mangas: mangas}, nil
+	slices.SortStableFunc(mangas, func(a, b Manga) int {
+		if a.Cover != "" && b.Cover == "" {
+			return -1
+		}
+		if a.Cover == "" && b.Cover != "" {
+			return 1
+		}
+		return 0
+	})
+
+	return &Service{
+		mangas: mangas,
+	}, nil
 }
 
 func (s *Service) All() []Manga {
