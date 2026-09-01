@@ -10,8 +10,9 @@ import (
 )
 
 type Repository struct {
-	User    *UserRepository
-	Session *SessionRepository
+	User            *UserRepository
+	Session         *SessionRepository
+	ReadingProgress *ReadingProgressRepository
 }
 
 func Open(dsn string) (*sql.DB, error) {
@@ -35,8 +36,9 @@ func Open(dsn string) (*sql.DB, error) {
 
 func NewRepository(db *sql.DB) *Repository {
 	return &Repository{
-		User:    NewUserRepository(db),
-		Session: NewSessionRepository(db),
+		User:            NewUserRepository(db),
+		Session:         NewSessionRepository(db),
+		ReadingProgress: NewReadingProgressRepository(db),
 	}
 }
 
@@ -54,6 +56,17 @@ func Init(db *sql.DB) error {
 			user_id    INTEGER NOT NULL,
 			expires_at INTEGER NOT NULL,
 			csrf_token TEXT NOT NULL
+		);
+
+		CREATE TABLE IF NOT EXISTS reading_progress (
+    		id          INTEGER PRIMARY KEY,
+    		user_id     INTEGER NOT NULL,
+    		mangadex_id TEXT    NOT NULL,
+    		volume      TEXT    NOT NULL,
+    		page        INTEGER NOT NULL DEFAULT 1,
+    		completed   INTEGER NOT NULL DEFAULT 0,
+    		updated_at  INTEGER NOT NULL,
+    		UNIQUE(user_id, mangadex_id)
 		);
 	`)
 

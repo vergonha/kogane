@@ -6,15 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ap0calypse ⋆.˚ ☾⭒.˚ reader</title>
 
-
     <link rel="apple-touch-icon" sizes="180x180" href="/ap0/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/ap0/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/ap0/favicon-16x16.png">
     <link rel="manifest" href="/ap0/site.webmanifest">
 
     <meta name="description" content="are you going to see the rose in the vase or the dust on the table?">
-
-    <meta property="og:title" content="a̵̢͉͋̈p̶̘͖̦̌́̀0̵̠̼̙͌̒͠c̵̢̣̆ǎ̶͉͖͙̿l̵͖͕̅y̵̼̮̍̇p̸̨͇̌̒̑ṣ̷̯̾ė̶̘̪̊">
+    <meta property="og:title" content="a̵̢͉͋̈p̶̘͖̦̌́̀0̵̠̼̙͌̒͠c̵̢̣̆ǎ̶͉͖͙̿l̵͖͕̅y̵̼̮̍̇p̸̨͇̌̒̑ṣ̷̯̾ė̶̘̪̊">
     <meta property="og:description" content="are you going to see the rose in the vase or the dust on the table?">
     <meta property="og:url" content="https://ap0calypse.rengar.dev/">
     <meta property="og:site_name" content="晋升">
@@ -23,12 +21,15 @@
     <meta property="og:image:width" content="150">
     <meta property="og:image:height" content="150">
     <meta property="og:image:alt" content="ap0calypse.rengar.dev logo">
-
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="晋升">
     <meta name="twitter:description" content="are you going to see the rose in the vase or the dust on the table?">
+
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
 
 <body
@@ -52,10 +53,20 @@
         </form>
     </header>
 
+    <section id="reading-now" class="hidden max-w-5xl w-full mx-auto mb-10">
+        <span class="text-xs text-neutral-600 tracking-wider">histórico:</span>
+        <div id="reading-now-list"
+            class="mt-3 flex gap-3 overflow-x-auto pb-2 no-scrollbar border-b border-neutral-800/40 pb-8"></div>
+    </section>
+
     <main id="manga-list" class="max-w-5xl w-full mx-auto flex-grow space-y-12">
         {{range .Mangas}}
-        <section class="manga-item flex flex-col md:flex-row gap-6 border-b border-neutral-800/40 pb-8 last:border-b-0"
-            data-title="{{.Title}}">
+        {{/* data-mangadex-id e data-cover usados pelo bloco "lendo agora" */}}
+        <section
+            class="manga-item flex flex-col md:flex-row gap-6 border-b border-neutral-800/40 pb-8 last:border-b-0"
+            data-title="{{.Title}}"
+            data-mangadex-id="{{.MangaDexID}}"
+            data-cover="{{.Cover}}">
 
             {{if .Cover}}
             <div
@@ -70,34 +81,25 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                 </svg>
-
-                <span class="text-[10px] uppercase tracking-wider">
-                    sem capa
-                </span>
+                <span class="text-[10px] uppercase tracking-wider">sem capa</span>
             </div>
             {{end}}
-
-            </div>
 
             <div class="flex-1 flex flex-col gap-4">
                 <div>
                     <h2 class="manga-title text-neutral-200 text-lg font-bold">{{.Title}}</h2>
                     <p class="manga-desc text-xs text-neutral-500 mt-2 leading-relaxed max-w-2xl line-clamp-3">
-                        {{if .Description}}
-                        {{.Description}}
-                        {{else}}
-                        Nenhuma descrição disponível ainda para este título.
-                        {{end}}
+                        {{if .Description}}{{.Description}}{{else}}Nenhuma descrição disponível ainda para este título.{{end}}
                     </p>
-
                 </div>
 
                 <div class="space-y-2">
                     <span class="text-xs text-neutral-600 uppercase tracking-wider">volumes disponíveis</span>
                     <div class="flex flex-wrap gap-2">
                         {{$title := .Title}}
+                        {{$mangadex_id := .MangaDexID}}
                         {{range .Volumes}}
-                        <a href="/read?title={{$title}}&vol={{.}}"
+                        <a href="/read?title={{$title}}&vol={{.}}&mangadex_id={{$mangadex_id}}"
                             class="bg-neutral-800/30 border border-neutral-800/80 hover:border-neutral-600/80 text-neutral-300 hover:text-white transition px-3 py-1.5 rounded text-xs">
                             {{printf "%02s" .}}
                         </a>
@@ -105,7 +107,6 @@
                     </div>
                 </div>
             </div>
-
         </section>
         {{else}}
         <div class="text-center py-20">
@@ -122,14 +123,15 @@
         class="text-[10px] text-neutral-600 flex flex-col md:flex-row justify-center items-center gap-1 md:gap-2 mt-12 pt-6 border-t border-neutral-800/40">
         <span>ap0calypse v1.0.0</span>
         <span class="hidden md:inline">|</span>
-        <span>{{len .}} títulos carregados</span>
+        <span>{{len .Mangas}} títulos carregados</span>
     </footer>
 
-    <!-- Lógica de busca com Matcher Textual -->
     <script>
+        const CSRF = '{{.CSRFToken}}'
+        
         const searchInput = document.getElementById('search-input');
-        const mangaItems = Array.from(document.querySelectorAll('.manga-item'));
-        const noResults = document.getElementById('no-results');
+        const mangaItems  = Array.from(document.querySelectorAll('.manga-item'));
+        const noResults   = document.getElementById('no-results');
 
         function normalizeText(text) {
             return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -140,72 +142,139 @@
             const q = normalizeText(query);
             const t = normalizeText(target);
 
-            if (t === q) return 100; // Match exato
-            if (t.startsWith(q)) return 80; // Prefixo
+            if (t === q) return 100;
+            if (t.startsWith(q)) return 80;
 
             const index = t.indexOf(q);
-            if (index !== -1) {
-                return 50 - index;
-            }
+            if (index !== -1) return 50 - index;
 
-            let score = 0;
-            let qIdx = 0;
+            let score = 0, qIdx = 0;
             for (let i = 0; i < t.length; i++) {
                 if (t[i] === q[qIdx]) {
                     score++;
-                    qIdx++;
-                    if (qIdx === q.length) return score + 10;
+                    if (++qIdx === q.length) return score + 10;
                 }
             }
-
             return 0;
         }
 
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener('input', e => {
             const query = e.target.value.trim();
-            let hasVisible = false;
+            const container = document.getElementById('manga-list');
 
             if (!query) {
-                mangaItems.forEach(item => {
-                    item.style.display = '';
-                    item.style.order = '';
-                });
+                mangaItems.forEach(el => { el.style.display = ''; el.style.order = ''; });
                 noResults.classList.add('hidden');
+                container.classList.remove('flex', 'flex-col');
                 return;
             }
 
-            const scoredItems = mangaItems.map(item => {
-                const title = item.getAttribute('data-title') || '';
-                const desc = item.querySelector('.manga-desc')?.textContent || '';
+            let hasVisible = false;
+            mangaItems
+                .map(el => ({
+                    el,
+                    score: Math.max(
+                        getMatchScore(query, el.dataset.title || '') * 2,
+                        getMatchScore(query, el.querySelector('.manga-desc')?.textContent || '')
+                    ),
+                }))
+                .forEach(({ el, score }) => {
+                    if (score > 0) {
+                        el.style.display = '';
+                        el.style.order   = -Math.round(score);
+                        hasVisible       = true;
+                    } else {
+                        el.style.display = 'none';
+                    }
+                });
 
-                const titleScore = getMatchScore(query, title) * 2;
-                const descScore = getMatchScore(query, desc);
-                const finalScore = Math.max(titleScore, descScore);
-
-                return { item, score: finalScore };
-            });
-
-            scoredItems.forEach(({ item, score }) => {
-                if (score > 0) {
-                    item.style.display = '';
-                    item.style.order = -Math.round(score);
-                    hasVisible = true;
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-
-            const container = document.getElementById('manga-list');
-            if (hasVisible) {
-                container.classList.add('flex', 'flex-col');
-                noResults.classList.add('hidden');
-            } else {
-                container.classList.remove('flex', 'flex-col');
-                noResults.classList.remove('hidden');
-            }
+            container.classList.toggle('flex', hasVisible);
+            container.classList.toggle('flex-col', hasVisible);
+            noResults.classList.toggle('hidden', hasVisible);
         });
+
+        const mangaById = Object.fromEntries(
+            mangaItems.map(el => [el.dataset.mangadexId, el.dataset])
+        );
+
+        function buildReadingCard(manga, entry) {
+            const { title, cover } = manga;
+            const vol  = entry.volume  ?? entry.Volume;
+            const page = entry.page    ?? entry.Page;
+            const id   = entry.mangadex_id ?? entry.MangadexID;
+
+            const link       = document.createElement('a');
+            link.href        = `/read?title=${encodeURIComponent(title)}&vol=${encodeURIComponent(vol)}&mangadex_id=${encodeURIComponent(id)}`;
+            link.className   = 'shrink-0 flex flex-col gap-1.5 w-24 group';
+
+            const thumb      = document.createElement('div');
+            thumb.className  = 'relative w-24 h-32 bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden group-hover:border-neutral-600 transition';
+
+            if (cover) {
+                const img    = document.createElement('img');
+                img.src      = cover;
+                img.alt      = '';
+                img.className = 'w-full h-full object-cover';
+                thumb.appendChild(img);
+            } else {
+                thumb.textContent = 'sem capa';
+                thumb.className  += ' flex items-center justify-center text-neutral-600 text-[10px]';
+            }
+
+            const del       = document.createElement('button');
+            del.className   = 'absolute top-1 right-1 w-5 h-5 bg-neutral-900/80 border border-neutral-700 rounded-sm text-neutral-400 hover:text-white hover:border-neutral-500 flex items-center justify-center transition text-[10px] leading-none';
+            del.textContent = '✕';
+            del.title       = 'remover do histórico';
+            del.addEventListener('click', async e => {
+                e.preventDefault();
+                e.stopPropagation();
+                try {
+                    await fetch(`/api/progress/${encodeURIComponent(id)}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-Token': CSRF },
+                    });
+                    link.remove();
+                    if (!list.children.length) section.classList.add('hidden');
+                } catch { }
+            });
+            thumb.appendChild(del);            
+
+            const titleEl      = document.createElement('p');
+            titleEl.className  = 'text-[10px] text-neutral-400 leading-tight truncate group-hover:text-neutral-200 transition';
+            titleEl.textContent = title;
+
+            const progressEl      = document.createElement('p');
+            progressEl.className  = 'text-[10px] text-neutral-600';
+            progressEl.textContent = `vol.${vol} · p.${page}`;
+
+            link.append(thumb, titleEl, progressEl);
+            return link;
+        }
+
+        (async () => {
+            try {
+                const res = await fetch('/api/progress');
+                if (!res.ok) return;
+
+                const entries = await res.json();
+                if (!Array.isArray(entries) || !entries.length) return;
+
+                const list    = document.getElementById('reading-now-list');
+                const section = document.getElementById('reading-now');
+
+                for (const entry of entries) {
+
+                    const id    = entry.mangadex_id ?? entry.MangadexID;
+                    const manga = mangaById[id];
+                    if (!manga) continue;
+
+                    list.appendChild(buildReadingCard(manga, entry));
+                }
+
+                if (list.children.length) section.classList.remove('hidden');
+            } catch { /* best-effort, não quebra o dashboard */ }
+        })();
     </script>
 
 </body>
-
 </html>

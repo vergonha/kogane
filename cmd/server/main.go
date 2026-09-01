@@ -82,6 +82,7 @@ func main() {
 		turnstileClient,
 		r2,
 		lib,
+		repository,
 	)
 
 	router := apphttp.NewRouter(h, authService)

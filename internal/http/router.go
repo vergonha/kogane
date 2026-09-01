@@ -42,5 +42,26 @@ func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 		),
 	)
 
+	mux.HandleFunc(
+		"GET /api/progress",
+		httpmw.RequireAuth(authService, h.ProgressGetAll),
+	)
+	mux.HandleFunc(
+		"GET /api/progress/{mangadex_id}",
+		httpmw.RequireAuth(authService, h.ProgressGet),
+	)
+	mux.HandleFunc(
+		"POST /api/progress",
+		httpmw.RequireAuth(authService, h.ProgressUpsert),
+	)
+	mux.HandleFunc(
+		"POST /api/progress/{mangadex_id}/complete",
+		httpmw.RequireAuth(authService, h.ProgressComplete),
+	)
+	mux.HandleFunc(
+		"DELETE /api/progress/{mangadex_id}",
+		httpmw.RequireAuth(authService, h.ProgressDelete),
+	)
+
 	return mux
 }

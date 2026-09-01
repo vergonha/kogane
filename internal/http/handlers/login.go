@@ -7,6 +7,7 @@ import (
 
 	"kogane/internal/auth"
 	"kogane/internal/config"
+	"kogane/internal/database"
 	"kogane/internal/library"
 	"kogane/internal/storage"
 	apptemplates "kogane/internal/templates"
@@ -20,6 +21,7 @@ type Handler struct {
 	Turnstile  *turnstile.Client
 	Storage    *storage.Client
 	LibrarySvc *library.Service
+	Repository *database.Repository
 }
 
 func New(
@@ -29,6 +31,7 @@ func New(
 	turnstileClient *turnstile.Client,
 	storageClient *storage.Client,
 	librarySvc *library.Service,
+	repository *database.Repository,
 ) *Handler {
 	return &Handler{
 		Config:     cfg,
@@ -37,6 +40,7 @@ func New(
 		Turnstile:  turnstileClient,
 		Storage:    storageClient,
 		LibrarySvc: librarySvc,
+		Repository: repository,
 	}
 }
 
@@ -167,7 +171,7 @@ func (h *Handler) registerInitialAdmin(
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	if !h.Auth.RequireCSRF(r) {
+	if !h.Auth.RequireCSRFFormValue(r) {
 		http.Error(w, "CSRF inválido", http.StatusForbidden)
 		return
 	}

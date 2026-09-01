@@ -6,15 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ap0calypse ⋆.˚ ☾⭒.˚ reader</title>
 
-
   <link rel="apple-touch-icon" sizes="180x180" href="/ap0/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/ap0/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/ap0/favicon-16x16.png">
   <link rel="manifest" href="/ap0/site.webmanifest">
 
   <meta name="description" content="are you going to see the rose in the vase or the dust on the table?">
-
-  <meta property="og:title" content="a̵̢͉͋̈p̶̘͖̦̌́̀0̵̠̼̙͌̒͠c̵̢̣̆ǎ̶͉͖͙̿l̵͖͕̅y̵̼̮̍̇p̸̨͇̌̒̑ṣ̷̯̾ė̶̘̪̊">
+  <meta property="og:title" content="a̵̢͉͋̈p̶̘͖̦̌́̀0̵̠̼̙͌̒͠c̵̢̣̆ǎ̶͉͖͙̿l̵͖͕̅y̵̼̮̍̇p̸̨͇̌̒̑ṣ̷̯̾ė̶̘̪̊">
   <meta property="og:description" content="are you going to see the rose in the vase or the dust on the table?">
   <meta property="og:url" content="https://ap0calypse.rengar.dev/">
   <meta property="og:site_name" content="晋升">
@@ -23,66 +21,38 @@
   <meta property="og:image:width" content="150">
   <meta property="og:image:height" content="150">
   <meta property="og:image:alt" content="ap0calypse.rengar.dev logo">
-
-  <!-- Twitter -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="晋升">
   <meta name="twitter:description" content="are you going to see the rose in the vase or the dust on the table?">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Esconde barra de rolagem mas mantém funcionalidade */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     @keyframes loading-bar {
-      0% {
-        transform: translateX(-140%);
-      }
-
-      100% {
-        transform: translateX(340%);
-      }
+      0%   { transform: translateX(-140%); }
+      100% { transform: translateX(340%); }
     }
 
-    .progress-loading {
-      position: relative;
-      overflow: hidden;
-    }
-
-    .progress-loading #progressBar {
-      width: 100% !important;
-      background: transparent;
-    }
-
+    .progress-loading { position: relative; overflow: hidden; }
+    .progress-loading #progressBar { width: 100% !important; background: transparent; }
     .progress-loading #progressBar::after {
       content: '';
       position: absolute;
       inset: 0;
       width: 30%;
-      background: linear-gradient(90deg,
-          transparent,
-          rgba(255, 255, 255, 0.9),
-          transparent);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
       animation: loading-bar 1.1s linear infinite;
     }
   </style>
 </head>
 
-<body
-  class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between selection:bg-neutral-700 selection:text-white">
+<body class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between selection:bg-neutral-700 selection:text-white">
   <header class="sticky top-0 z-50 w-full bg-[#181818]/90 backdrop-blur-md border-b border-neutral-800/60">
     <div class="flex flex-col gap-3 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
       <div class="flex items-center justify-between gap-3 sm:contents">
-        <a href="/dashboard" class="shrink-0 text-neutral-500 hover:text-neutral-300 transition">
-          ← voltar
-        </a>
-
+        <a href="/dashboard" class="shrink-0 text-neutral-500 hover:text-neutral-300 transition">← voltar</a>
         <span class="block text-neutral-300 font-bold truncate max-w-full sm:max-w-[40vw]">
           {{.Title}} / Volume {{printf "%02s" .Vol}}
         </span>
@@ -90,274 +60,239 @@
 
       <div class="flex items-center justify-center gap-3 sm:gap-4 sm:justify-between">
         <div class="flex items-center gap-2 border border-neutral-800 rounded px-2 py-1 bg-neutral-900/30">
-          <button id="zoomOut" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none"
-            title="Diminuir Zoom">
-            -[z]
-          </button>
-          <span id="zoomLevel" class="text-neutral-400 select-none min-w-[2.5rem] text-center">
-            100%
-          </span>
-          <button id="zoomIn" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none"
-            title="Aumentar Zoom">
-            +[x]
-          </button>
+          <button id="zoomOut" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none" title="Diminuir Zoom">-[z]</button>
+          <span id="zoomLevel" class="text-neutral-400 select-none min-w-[2.5rem] text-center">100%</span>
+          <button id="zoomIn" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none" title="Aumentar Zoom">+[x]</button>
         </div>
-
-        <span id="pageIndicator" class="text-neutral-500 min-w-[3.5rem] text-right shrink-0">
-          0 / 0
-        </span>
+        <span id="pageIndicator" class="text-neutral-500 min-w-[3.5rem] text-right shrink-0">0 / 0</span>
       </div>
     </div>
 
     <div class="w-full bg-[#181818]/95">
-      <div id="loadingText"
-        class="hidden px-4 py-2 text-[11px] tracking-wider text-neutral-300 border-t border-neutral-800/40 sm:px-6">
+      <div id="loadingText" class="hidden px-4 py-2 text-[11px] tracking-wider text-neutral-300 border-t border-neutral-800/40 sm:px-6">
         buscando páginas...
       </div>
-
       <div id="progressTrack" class="h-1.5 w-full bg-neutral-900/80 overflow-hidden relative">
         <div id="progressBar" class="h-full w-0 bg-neutral-300 transition-[width] duration-300 ease-out"></div>
       </div>
     </div>
   </header>
 
-  <div id="loadingText"
-    class="hidden px-6 py-2 text-[11px] tracking-wider text-neutral-300 border-b border-neutral-800/60">
-    buscando páginas...
-  </div>
-  <div id="progressTrack"
-    class="h-1.5 w-full bg-neutral-900/80 border-b border-neutral-800/60 overflow-hidden relative">
-    <div id="progressBar" class="h-full w-0 bg-neutral-300 transition-[width] duration-300 ease-out"></div>
-  </div>
-
-  <main id="readerContainer"
-    class="flex-grow flex flex-col items-center py-4 sm:py-6 gap-4 sm:gap-6 overflow-y-auto w-full px-2 sm:px-4">
-    <div id="pagesWrapper" class="flex flex-col items-center gap-4 transition-all duration-200"
-      style="width: 100%; max-width: 720px;"></div>
+  <main id="readerContainer" class="flex-grow flex flex-col items-center py-4 sm:py-6 gap-4 sm:gap-6 overflow-y-auto w-full px-2 sm:px-4">
+    <div id="pagesWrapper" class="flex flex-col items-center gap-4 transition-all duration-200" style="width: 100%; max-width: 720px;"></div>
   </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.mjs" type="module"></script>
   <script type="module">
     import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.mjs';
 
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.worker.min.mjs';
 
-    const title = {{.Title | js}};
-    const vol = {{.Vol | js}};
-    const url =
-      `/pdf?title=${encodeURIComponent(title)}&vol=${encodeURIComponent(vol)}`;
+    const title       = {{.Title | js}};
+    const vol         = {{.Vol | js}};
+    const CSRF        = {{.CSRFToken | js}};
+    const MANGADEX_ID = {{.MangaDexID | js}};
 
-    const storageKey = `progress::${title}::${vol}`;
-
-    const wrapper = document.getElementById('pagesWrapper');
+    const wrapper       = document.getElementById('pagesWrapper');
     const pageIndicator = document.getElementById('pageIndicator');
-    const zoomIn = document.getElementById('zoomIn');
-    const zoomOut = document.getElementById('zoomOut');
-    const zoomLevelText = document.getElementById('zoomLevel');
+    const zoomInBtn     = document.getElementById('zoomIn');
+    const zoomOutBtn    = document.getElementById('zoomOut');
+    const zoomLevelEl   = document.getElementById('zoomLevel');
+    const progressBar   = document.getElementById('progressBar');
     const progressTrack = document.getElementById('progressTrack');
-    const progressBar = document.getElementById('progressBar');
-    const loadingText = document.getElementById('loadingText');
+    const loadingText   = document.getElementById('loadingText');
 
-    let pdf = null;
-    let totalPages = 0;
-    let renderQueue = new Set();
-    const renderedPages = new Map();
-
-    const zoomSteps = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150];
+    const ZOOM_STEPS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150];
     let zoomIndex = 5;
+
+    /** @type {Map<number, 'rendered'|'idle'>} */
+    const renderedPages = new Map();
+    const renderQueue   = new Set();
+    let saveTimer;
+    let pdf;
 
     setLoading(true);
 
     try {
-      pdf = await pdfjsLib.getDocument(url).promise;
-      totalPages = pdf.numPages;
-      initReader();
+      pdf = await pdfjsLib.getDocument(
+        `/pdf?title=${encodeURIComponent(title)}&vol=${encodeURIComponent(vol)}`
+      ).promise;
+
+      buildPages(pdf.numPages);
+
+      const savedPage = await fetchProgress();
+      initObserver(savedPage);
       setLoading(false);
     } catch (err) {
-      console.error('Erro ao carregar o PDF:', err);
-      showLoadingError();
+      console.error('Erro ao carregar PDF:', err);
+      showError();
     }
 
-    function initReader() {
-      for (let i = 1; i <= totalPages; i++) {
-        const pageContainer = document.createElement('div');
-        pageContainer.id = `page-container-${i}`;
-        pageContainer.className =
-          'w-full flex justify-center relative bg-neutral-900/10 border border-neutral-900/40 rounded overflow-hidden min-h-[500px]';
-        pageContainer.dataset.page = i;
+    function buildPages(total) {
+      const frag = document.createDocumentFragment();
+      for (let i = 1; i <= total; i++) {
+        const div    = document.createElement('div');
+        div.id       = `page-container-${i}`;
+        div.dataset.page = i;
+        div.className = 'w-full';
 
-        const canvas = document.createElement('canvas');
-        canvas.id = `canvas-${i}`;
-        canvas.className = 'shadow-xl max-w-full';
+        const canvas    = document.createElement('canvas');
+        canvas.id       = `canvas-${i}`;
+        canvas.className = 'w-full block';
 
-        pageContainer.appendChild(canvas);
-        wrapper.appendChild(pageContainer);
+        div.appendChild(canvas);
+        frag.appendChild(div);
       }
+      wrapper.appendChild(frag);
+    }
 
-      const savedPage = parseInt(localStorage.getItem(storageKey)) || 1;
-      updateProgress(savedPage);
-
-      const observer = new IntersectionObserver(
-        entries => {
-          entries.forEach(entry => {
-            const pageNum = parseInt(entry.target.dataset.page);
-            if (entry.isIntersecting) {
-              triggerRender(pageNum);
-              updateProgress(pageNum);
-            } else {
-              cancelRender(pageNum);
-            }
-          });
-        },
-        {
-          root: null,
-          rootMargin: '100% 0px 100% 0px',
-          threshold: 0.1,
-        }
-      );
-
-      document
-        .querySelectorAll('[data-page]')
-        .forEach(el => observer.observe(el));
-
-      if (savedPage > 1) {
-        setTimeout(() => {
-          const targetEl = document.getElementById(
-            `page-container-${savedPage}`
-          );
-          if (targetEl) {
-            targetEl.scrollIntoView({
-              behavior: 'auto',
-              block: 'start',
-            });
-          }
-        }, 150);
+    async function fetchProgress() {
+      if (!MANGADEX_ID) return 1;
+      try {
+        const res = await fetch(`/api/progress/${MANGADEX_ID}`);
+        if (!res.ok) return 1;
+        const data = await res.json();
+        return String(data.Volume) === String(vol) ? (data.Page ?? 1) : 1;
+      } catch {
+        return 1;
       }
+    }
+
+    function saveProgress(page) {
+      if (!MANGADEX_ID) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        fetch('/api/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+          body: JSON.stringify({ mangadex_id: MANGADEX_ID, volume: vol, page }),
+        }).catch(() => {});
+      }, 1500);
     }
 
     async function triggerRender(num) {
-      if (renderedPages.get(num) === 'rendered' || renderQueue.has(num)) {
-        return;
-      }
+      if (renderedPages.get(num) === 'rendered' || renderQueue.has(num)) return;
       renderQueue.add(num);
 
       try {
-        const page = await pdf.getPage(num);
+        const page   = await pdf.getPage(num);
         const canvas = document.getElementById(`canvas-${num}`);
         if (!canvas) return;
 
-        const ctx = canvas.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
-
-        const wrapperWidth = wrapper.clientWidth;
-        const rawViewport = page.getViewport({ scale: 1 });
-        const scale = (wrapperWidth / rawViewport.width) * dpr;
+        const dpr      = window.devicePixelRatio || 1;
+        const rawVp    = page.getViewport({ scale: 1 });
+        const scale    = (wrapper.clientWidth / rawVp.width) * dpr;
         const viewport = page.getViewport({ scale });
 
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        canvas.style.width = `${viewport.width / dpr}px`;
+        canvas.width        = viewport.width;
+        canvas.height       = viewport.height;
+        canvas.style.width  = `${viewport.width / dpr}px`;
         canvas.style.height = `${viewport.height / dpr}px`;
 
-        const container = document.getElementById(`page-container-${num}`);
-        if (container) {
-          container.style.minHeight = `${viewport.height / dpr}px`;
-        }
+        document
+          .getElementById(`page-container-${num}`)
+          ?.style.setProperty('min-height', `${viewport.height / dpr}px`);
 
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
         renderedPages.set(num, 'rendered');
       } catch (err) {
-        console.warn(`Render cancelado/falhou na página ${num}`, err);
+        console.warn(`Render falhou na página ${num}`, err);
       } finally {
         renderQueue.delete(num);
       }
     }
 
     function cancelRender(num) {
-      if (renderedPages.get(num) === 'rendered') {
-        const canvas = document.getElementById(`canvas-${num}`);
-        if (canvas) {
-          const ctx = canvas.getContext('2d');
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          canvas.width = 0;
-          canvas.height = 0;
-        }
-        renderedPages.set(num, 'idle');
+      if (renderedPages.get(num) !== 'rendered') return;
+      const canvas = document.getElementById(`canvas-${num}`);
+      if (canvas) {
+        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        canvas.width  = 0;
+        canvas.height = 0;
+      }
+      renderedPages.set(num, 'idle');
+    }
+
+    function initObserver(savedPage) {
+      updateProgress(savedPage);
+
+      const observer = new IntersectionObserver(
+        entries => {
+          for (const entry of entries) {
+            const num = parseInt(entry.target.dataset.page);
+            if (entry.isIntersecting) {
+              triggerRender(num);
+              updateProgress(num);
+            } else {
+              cancelRender(num);
+            }
+          }
+        },
+        { rootMargin: '100% 0px 100% 0px', threshold: 0.1 }
+      );
+
+      document.querySelectorAll('[data-page]').forEach(el => observer.observe(el));
+
+      if (savedPage > 1) {
+        setTimeout(() => {
+          document
+            .getElementById(`page-container-${savedPage}`)
+            ?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }, 150);
       }
     }
 
     function updateProgress(num) {
-      pageIndicator.textContent = `${num} / ${totalPages}`;
-      localStorage.setItem(storageKey, num);
-
-      const percent =
-        totalPages > 0
-          ? Math.max(0, Math.min(100, (num / totalPages) * 100))
-          : 0;
-
-      progressBar.style.width = `${percent}%`;
-    }
-
-    function setLoading(isLoading) {
-      loadingText.classList.toggle('hidden', !isLoading);
-      progressTrack.classList.toggle('progress-loading', isLoading);
-
-      if (isLoading) {
-        pageIndicator.textContent = '...';
-      }
-    }
-
-    function showLoadingError() {
-      loadingText.classList.remove('hidden');
-      loadingText.textContent = 'ERRO AO CARREGAR PDF';
-      progressTrack.classList.remove('progress-loading');
-      progressBar.style.width = '100%';
-      progressBar.classList.remove('bg-neutral-300');
-      progressBar.classList.add('bg-red-400');
+      pageIndicator.textContent = `${num} / ${pdf.numPages}`;
+      saveProgress(num);
+      const pct = Math.max(0, Math.min(100, (num / pdf.numPages) * 100));
+      progressBar.style.width = `${pct}%`;
     }
 
     function applyZoom() {
-      const zoom = zoomSteps[zoomIndex];
-      zoomLevelText.textContent = `${zoom}%`;
-      wrapper.style.maxWidth = `${720 * (zoom / 100)}px`;
-
+      const zoom = ZOOM_STEPS[zoomIndex];
+      zoomLevelEl.textContent    = `${zoom}%`;
+      wrapper.style.maxWidth     = `${720 * (zoom / 100)}px`;
       renderedPages.clear();
-      document.querySelectorAll('[data-page]').forEach(container => {
-        const pageNum = parseInt(container.dataset.page);
-        const rect = container.getBoundingClientRect();
-        if (rect.top < window.innerHeight && rect.bottom > 0) {
-          triggerRender(pageNum);
+
+      document.querySelectorAll('[data-page]').forEach(el => {
+        const { top, bottom } = el.getBoundingClientRect();
+        if (top < window.innerHeight && bottom > 0) {
+          triggerRender(parseInt(el.dataset.page));
         }
       });
     }
 
-    zoomIn.addEventListener('click', () => {
-      if (zoomIndex < zoomSteps.length - 1) {
-        zoomIndex++;
-        applyZoom();
-      }
+    function setLoading(on) {
+      loadingText.classList.toggle('hidden', !on);
+      progressTrack.classList.toggle('progress-loading', on);
+      if (on) pageIndicator.textContent = '...';
+    }
+
+    function showError() {
+      loadingText.textContent = 'ERRO AO CARREGAR PDF';
+      loadingText.classList.remove('hidden');
+      progressTrack.classList.remove('progress-loading');
+      progressBar.style.width = '100%';
+      progressBar.classList.replace('bg-neutral-300', 'bg-red-400');
+    }
+
+    zoomInBtn.addEventListener('click', () => {
+      if (zoomIndex < ZOOM_STEPS.length - 1) { zoomIndex++; applyZoom(); }
+    });
+    zoomOutBtn.addEventListener('click', () => {
+      if (zoomIndex > 0) { zoomIndex--; applyZoom(); }
     });
 
-    zoomOut.addEventListener('click', () => {
-      if (zoomIndex > 0) {
-        zoomIndex--;
-        applyZoom();
-      }
+    document.addEventListener('keydown', ({ key }) => {
+      if (key === 'x' || key === 'X') zoomInBtn.click();
+      if (key === 'z' || key === 'Z') zoomOutBtn.click();
     });
 
-    document.addEventListener('keydown', e => {
-      if (e.key === 'x' || e.key === 'X') zoomIn.click();
-      if (e.key === 'z' || e.key === 'Z') zoomOut.click();
-    });
-
-    let resizeTimeout;
+    let resizeTimer;
     window.addEventListener('resize', () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        renderedPages.clear();
-        applyZoom();
-      }, 200);
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { renderedPages.clear(); applyZoom(); }, 200);
     });
   </script>
 </body>
