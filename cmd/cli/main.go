@@ -32,7 +32,6 @@ func main() {
 	defer db.Close()
 
 	repository := database.NewRepository(db)
-	go database.StartSessionCleanup(repository.Session)
 
 	authService, err := auth.NewService(
 		repository,

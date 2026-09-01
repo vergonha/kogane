@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"time"
@@ -59,13 +60,18 @@ func Init(db *sql.DB) error {
 	return err
 }
 
-func StartSessionCleanup(session *SessionRepository) {
+func StartSessionCleanup(ctx context.Context, repo *Repository) {
 	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		if err := session.CleanupExpiredSessions(time.Now().Unix()); err != nil {
-			log.Printf("session cleanup: %v", err)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := repo.Session.CleanupExpiredSessions(time.Now().Unix()); err != nil {
+				log.Printf("session cleanup: %v", err)
+			}
 		}
 	}
 }

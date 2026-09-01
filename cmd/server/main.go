@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -35,7 +36,9 @@ func main() {
 	defer db.Close()
 
 	repository := database.NewRepository(db)
-	go database.StartSessionCleanup(repository.Session)
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
+	go database.StartSessionCleanup(ctx, repository)
 
 	renderer, err := apptemplates.New(
 		cfg.TemplatesGlob,
