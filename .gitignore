@@ -9,6 +9,9 @@
 *.dylib
 /dist
 *.db
+/scripts
+*.py
+*.json
 
 # Test binary, built with `go test -c`
 *.test

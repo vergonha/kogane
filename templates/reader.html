@@ -133,7 +133,7 @@
     const loadingText = document.getElementById('loadingText');
 
     const ZOOM_STEPS = [50, 60, 70, 80, 90, 100, 110, 120, 140, 160, 200];
-    const DEFAULT_ZOOM = 5; 
+    const DEFAULT_ZOOM = 5;
     let zoomIndex = DEFAULT_ZOOM;
 
     function applyZoom() {
@@ -237,11 +237,14 @@
 
       readerContainer.scrollTop = 0;
       readerContainer.scrollLeft = 0;
+      window.scrollTo(0, 0);
+
       updateProgress(currentPage);
 
       await triggerRender(currentPage);
       if (currentPage < pdf.numPages) triggerRender(currentPage + 1);
     }
+
 
     async function fetchProgress() {
       if (!MANGADEX_ID) return 1;
