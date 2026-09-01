@@ -27,28 +27,48 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-    @keyframes loading-bar {
-      0%   { transform: translateX(-140%); }
-      100% { transform: translateX(340%); }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
     }
 
-    .progress-loading { position: relative; overflow: hidden; }
-    .progress-loading #progressBar { width: 100% !important; background: transparent; }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    @keyframes loading-bar {
+      0% {
+        transform: translateX(-140%);
+      }
+
+      100% {
+        transform: translateX(340%);
+      }
+    }
+
+    .progress-loading {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-loading #progressBar {
+      width: 100% !important;
+      background: transparent;
+    }
+
     .progress-loading #progressBar::after {
       content: '';
       position: absolute;
       inset: 0;
       width: 30%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
       animation: loading-bar 1.1s linear infinite;
     }
   </style>
 </head>
 
-<body class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between selection:bg-neutral-700 selection:text-white">
+<body
+  class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between selection:bg-neutral-700 selection:text-white">
   <header class="sticky top-0 z-50 w-full bg-[#181818]/90 backdrop-blur-md border-b border-neutral-800/60">
     <div class="flex flex-col gap-3 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
       <div class="flex items-center justify-between gap-3 sm:contents">
@@ -60,16 +80,24 @@
 
       <div class="flex items-center justify-center gap-3 sm:gap-4 sm:justify-between">
         <div class="flex items-center gap-2 border border-neutral-800 rounded px-2 py-1 bg-neutral-900/30">
-          <button id="zoomOut" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none" title="Diminuir Zoom">-[z]</button>
+          <button id="zoomOut" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none"
+            title="Diminuir Zoom">-[z]</button>
           <span id="zoomLevel" class="text-neutral-400 select-none min-w-[2.5rem] text-center">100%</span>
-          <button id="zoomIn" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none" title="Aumentar Zoom">+[x]</button>
+          <button id="zoomIn" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none"
+            title="Aumentar Zoom">+[x]</button>
         </div>
-        <span id="pageIndicator" class="text-neutral-500 min-w-[3.5rem] text-right shrink-0">0 / 0</span>
+        <div class="flex items-center gap-1.5 text-neutral-500 shrink-0 select-none">
+          <input id="pageInput" type="number" min="1"
+            class="w-10 bg-neutral-900/50 border border-neutral-800/80 rounded text-center py-0.5 text-neutral-300 focus:outline-none focus:border-neutral-600 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-xs" />
+          <span>/</span>
+          <span id="totalPages" class="min-w-[1.5rem]">0</span>
+        </div>
       </div>
     </div>
 
     <div class="w-full bg-[#181818]/95">
-      <div id="loadingText" class="hidden px-4 py-2 text-[11px] tracking-wider text-neutral-300 border-t border-neutral-800/40 sm:px-6">
+      <div id="loadingText"
+        class="hidden px-4 py-2 text-[11px] tracking-wider text-neutral-300 border-t border-neutral-800/40 sm:px-6">
         buscando páginas...
       </div>
       <div id="progressTrack" class="h-1.5 w-full bg-neutral-900/80 overflow-hidden relative">
@@ -78,50 +106,76 @@
     </div>
   </header>
 
-  <main id="readerContainer" class="flex-grow flex flex-col items-center py-4 sm:py-6 gap-4 sm:gap-6 overflow-y-auto w-full px-2 sm:px-4">
-    <div id="pagesWrapper" class="flex flex-col items-center gap-4 transition-all duration-200" style="width: 100%; max-width: 720px;"></div>
+  <main id="readerContainer"
+    class="flex-grow flex flex-col items-center py-4 sm:py-6 gap-4 sm:gap-6 overflow-y-auto overflow-x-auto w-full px-2 sm:px-4 cursor-pointer select-none">
+    <div id="pagesWrapper" class="flex flex-col items-center gap-4 transition-all duration-200"></div>
   </main>
 
   <script type="module">
     import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.mjs';
-
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.worker.min.mjs';
 
-    const title       = {{.Title | js}};
-    const vol         = {{.Vol | js}};
-    const CSRF        = {{.CSRFToken | js}};
+    const title = {{.Title | js}};
+    const vol = {{.Vol | js}};
+    const CSRF = {{.CSRFToken | js}};
     const MANGADEX_ID = {{.MangaDexID | js}};
 
-    const wrapper       = document.getElementById('pagesWrapper');
-    const pageIndicator = document.getElementById('pageIndicator');
-    const zoomInBtn     = document.getElementById('zoomIn');
-    const zoomOutBtn    = document.getElementById('zoomOut');
-    const zoomLevelEl   = document.getElementById('zoomLevel');
-    const progressBar   = document.getElementById('progressBar');
+    const readerContainer = document.getElementById('readerContainer');
+    const wrapper = document.getElementById('pagesWrapper');
+    const pageInput = document.getElementById('pageInput');
+    const totalPagesEl = document.getElementById('totalPages');
+    const zoomInBtn = document.getElementById('zoomIn');
+    const zoomOutBtn = document.getElementById('zoomOut');
+    const zoomLevelEl = document.getElementById('zoomLevel');
+    const progressBar = document.getElementById('progressBar');
     const progressTrack = document.getElementById('progressTrack');
-    const loadingText   = document.getElementById('loadingText');
+    const loadingText = document.getElementById('loadingText');
 
-    const ZOOM_STEPS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150];
-    let zoomIndex = 5;
+    const ZOOM_STEPS = [50, 60, 70, 80, 90, 100, 110, 120, 140, 160, 200];
+    const DEFAULT_ZOOM = 5; 
+    let zoomIndex = DEFAULT_ZOOM;
 
-    /** @type {Map<number, 'rendered'|'idle'>} */
+    function applyZoom() {
+      const pct = ZOOM_STEPS[zoomIndex];
+      zoomLevelEl.textContent = `${pct}%`;
+
+      const naturalWidth = Math.min(720, readerContainer.clientWidth);
+      const targetWidth = Math.round(naturalWidth * pct / 100);
+      wrapper.style.width = `${targetWidth}px`;
+
+      readerContainer.style.alignItems =
+        targetWidth > readerContainer.clientWidth ? 'flex-start' : 'center';
+
+      const isMin = zoomIndex === 0;
+      const isMax = zoomIndex === ZOOM_STEPS.length - 1;
+
+      zoomOutBtn.disabled = isMin;
+      zoomInBtn.disabled = isMax;
+      zoomOutBtn.classList.toggle('opacity-30', isMin);
+      zoomOutBtn.classList.toggle('cursor-not-allowed', isMin);
+      zoomInBtn.classList.toggle('opacity-30', isMax);
+      zoomInBtn.classList.toggle('cursor-not-allowed', isMax);
+    }
+
     const renderedPages = new Map();
-    const renderQueue   = new Set();
+    const renderQueue = new Set();
     let saveTimer;
+    let resizeTimer;
+    let currentPage = 1;
     let pdf;
 
     setLoading(true);
-
     try {
       pdf = await pdfjsLib.getDocument(
         `/pdf?title=${encodeURIComponent(title)}&vol=${encodeURIComponent(vol)}`
       ).promise;
 
       buildPages(pdf.numPages);
+      applyZoom();
 
       const savedPage = await fetchProgress();
-      initObserver(savedPage);
+      await showPage(parseInt(savedPage) || 1);
       setLoading(false);
     } catch (err) {
       console.error('Erro ao carregar PDF:', err);
@@ -131,19 +185,62 @@
     function buildPages(total) {
       const frag = document.createDocumentFragment();
       for (let i = 1; i <= total; i++) {
-        const div    = document.createElement('div');
-        div.id       = `page-container-${i}`;
+        const div = document.createElement('div');
+        div.id = `page-container-${i}`;
         div.dataset.page = i;
-        div.className = 'w-full';
+        div.className = 'w-full hidden';
 
-        const canvas    = document.createElement('canvas');
-        canvas.id       = `canvas-${i}`;
+        const canvas = document.createElement('canvas');
+        canvas.id = `canvas-${i}`;
         canvas.className = 'w-full block';
 
         div.appendChild(canvas);
         frag.appendChild(div);
       }
       wrapper.appendChild(frag);
+    }
+
+    async function triggerRender(num) {
+      if (renderedPages.has(num) || renderQueue.has(num)) return;
+      renderQueue.add(num);
+      try {
+        const page = await pdf.getPage(num);
+        const canvas = document.getElementById(`canvas-${num}`);
+        if (!canvas) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        const rawVp = page.getViewport({ scale: 1 });
+        const scale = (720 / rawVp.width) * dpr * 1.5;
+        const viewport = page.getViewport({ scale });
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        const container = document.getElementById(`page-container-${num}`);
+        if (container) container.style.aspectRatio = `${rawVp.width} / ${rawVp.height}`;
+
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        renderedPages.set(num, 'rendered');
+      } catch (err) {
+        console.warn(`Render falhou na página ${num}`, err);
+      } finally {
+        renderQueue.delete(num);
+      }
+    }
+
+    async function showPage(num) {
+      if (!pdf || num < 1 || num > pdf.numPages) return;
+
+      document.getElementById(`page-container-${currentPage}`)?.classList.add('hidden');
+      currentPage = num;
+      document.getElementById(`page-container-${currentPage}`)?.classList.remove('hidden');
+
+      readerContainer.scrollTop = 0;
+      readerContainer.scrollLeft = 0;
+      updateProgress(currentPage);
+
+      await triggerRender(currentPage);
+      if (currentPage < pdf.numPages) triggerRender(currentPage + 1);
     }
 
     async function fetchProgress() {
@@ -166,107 +263,28 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
           body: JSON.stringify({ mangadex_id: MANGADEX_ID, volume: vol, page }),
-        }).catch(() => {});
+        }).catch(() => { });
       }, 1500);
     }
 
-    async function triggerRender(num) {
-      if (renderedPages.get(num) === 'rendered' || renderQueue.has(num)) return;
-      renderQueue.add(num);
-
-      try {
-        const page   = await pdf.getPage(num);
-        const canvas = document.getElementById(`canvas-${num}`);
-        if (!canvas) return;
-
-        const dpr      = window.devicePixelRatio || 1;
-        const rawVp    = page.getViewport({ scale: 1 });
-        const scale    = (wrapper.clientWidth / rawVp.width) * dpr;
-        const viewport = page.getViewport({ scale });
-
-        canvas.width        = viewport.width;
-        canvas.height       = viewport.height;
-        canvas.style.width  = `${viewport.width / dpr}px`;
-        canvas.style.height = `${viewport.height / dpr}px`;
-
-        document
-          .getElementById(`page-container-${num}`)
-          ?.style.setProperty('min-height', `${viewport.height / dpr}px`);
-
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-        renderedPages.set(num, 'rendered');
-      } catch (err) {
-        console.warn(`Render falhou na página ${num}`, err);
-      } finally {
-        renderQueue.delete(num);
-      }
-    }
-
-    function cancelRender(num) {
-      if (renderedPages.get(num) !== 'rendered') return;
-      const canvas = document.getElementById(`canvas-${num}`);
-      if (canvas) {
-        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-        canvas.width  = 0;
-        canvas.height = 0;
-      }
-      renderedPages.set(num, 'idle');
-    }
-
-    function initObserver(savedPage) {
-      updateProgress(savedPage);
-
-      const observer = new IntersectionObserver(
-        entries => {
-          for (const entry of entries) {
-            const num = parseInt(entry.target.dataset.page);
-            if (entry.isIntersecting) {
-              triggerRender(num);
-              updateProgress(num);
-            } else {
-              cancelRender(num);
-            }
-          }
-        },
-        { rootMargin: '100% 0px 100% 0px', threshold: 0.1 }
-      );
-
-      document.querySelectorAll('[data-page]').forEach(el => observer.observe(el));
-
-      if (savedPage > 1) {
-        setTimeout(() => {
-          document
-            .getElementById(`page-container-${savedPage}`)
-            ?.scrollIntoView({ behavior: 'auto', block: 'start' });
-        }, 150);
-      }
-    }
-
     function updateProgress(num) {
-      pageIndicator.textContent = `${num} / ${pdf.numPages}`;
+      pageInput.value = num;
+      totalPagesEl.textContent = pdf.numPages;
       saveProgress(num);
       const pct = Math.max(0, Math.min(100, (num / pdf.numPages) * 100));
       progressBar.style.width = `${pct}%`;
     }
 
-    function applyZoom() {
-      const zoom = ZOOM_STEPS[zoomIndex];
-      zoomLevelEl.textContent    = `${zoom}%`;
-      wrapper.style.maxWidth     = `${720 * (zoom / 100)}px`;
-      renderedPages.clear();
-
-      document.querySelectorAll('[data-page]').forEach(el => {
-        const { top, bottom } = el.getBoundingClientRect();
-        if (top < window.innerHeight && bottom > 0) {
-          triggerRender(parseInt(el.dataset.page));
-        }
-      });
-    }
-
     function setLoading(on) {
       loadingText.classList.toggle('hidden', !on);
       progressTrack.classList.toggle('progress-loading', on);
-      if (on) pageIndicator.textContent = '...';
+      pageInput.disabled = on;
+      if (on) {
+        pageInput.value = '';
+        totalPagesEl.textContent = '...';
+      } else {
+        pageInput.max = pdf.numPages;
+      }
     }
 
     function showError() {
@@ -277,6 +295,12 @@
       progressBar.classList.replace('bg-neutral-300', 'bg-red-400');
     }
 
+    function handlePageInput() {
+      const val = parseInt(pageInput.value, 10);
+      if (isNaN(val)) { pageInput.value = currentPage; return; }
+      showPage(Math.max(1, Math.min(pdf.numPages, val)));
+    }
+
     zoomInBtn.addEventListener('click', () => {
       if (zoomIndex < ZOOM_STEPS.length - 1) { zoomIndex++; applyZoom(); }
     });
@@ -284,15 +308,28 @@
       if (zoomIndex > 0) { zoomIndex--; applyZoom(); }
     });
 
-    document.addEventListener('keydown', ({ key }) => {
-      if (key === 'x' || key === 'X') zoomInBtn.click();
-      if (key === 'z' || key === 'Z') zoomOutBtn.click();
-    });
-
-    let resizeTimer;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => { renderedPages.clear(); applyZoom(); }, 200);
+      resizeTimer = setTimeout(applyZoom, 150);
+    });
+
+    readerContainer.addEventListener('click', (e) => {
+      if (e.target.closest('button, a, input')) return;
+      showPage(e.clientX < window.innerWidth / 2 ? currentPage - 1 : currentPage + 1);
+    });
+
+    pageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { handlePageInput(); pageInput.blur(); }
+    });
+    pageInput.addEventListener('blur', handlePageInput);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      const k = e.key;
+      if (k === 'x' || k === 'X') zoomInBtn.click();
+      if (k === 'z' || k === 'Z') zoomOutBtn.click();
+      if (k === 'ArrowLeft') showPage(currentPage - 1);
+      if (k === 'ArrowRight') showPage(currentPage + 1);
     });
   </script>
 </body>
