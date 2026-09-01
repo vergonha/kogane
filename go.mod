@@ -27,6 +27,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.40.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.47.1 // indirect
 	github.com/aws/smithy-go v1.28.1 // indirect
+	github.com/joho/godotenv v1.5.1
 	github.com/ncruces/go-sqlite3-wasm/v3 v3.2.35304 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect

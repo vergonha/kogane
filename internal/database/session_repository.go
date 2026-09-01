@@ -17,7 +17,7 @@ func NewSessionRepository(db *sql.DB) *SessionRepository {
 	return &SessionRepository{db: db}
 }
 
-func (r *SessionRepository) CreateSession(session Session) error {
+func (r *SessionRepository) Create(session Session) error {
 	_, err := r.db.Exec(`
 		INSERT INTO sessions
 			(id, user_id, expires_at, csrf_token)
@@ -27,7 +27,7 @@ func (r *SessionRepository) CreateSession(session Session) error {
 	return err
 }
 
-func (r *SessionRepository) GetSessionByID(id string) (Session, error) {
+func (r *SessionRepository) GetById(id string) (Session, error) {
 	var session Session
 
 	err := r.db.QueryRow(`
@@ -44,12 +44,12 @@ func (r *SessionRepository) GetSessionByID(id string) (Session, error) {
 	return session, err
 }
 
-func (r *SessionRepository) DeleteSessionByID(id string) error {
+func (r *SessionRepository) DeleteById(id string) error {
 	_, err := r.db.Exec(`DELETE FROM sessions WHERE id = ?`, id)
 	return err
 }
 
-func (r *SessionRepository) DeleteSessionsByUserID(userID int64) error {
+func (r *SessionRepository) DeleteByUserID(userID int64) error {
 	_, err := r.db.Exec(`DELETE FROM sessions WHERE user_id = ?`, userID)
 	return err
 }

@@ -12,13 +12,13 @@ func (s *Service) GetCSRFToken(r *http.Request) (string, bool) {
 		return "", false
 	}
 
-	session, err := s.repository.Session.GetSessionByID(sessionID)
+	session, err := s.repository.Session.GetById(sessionID)
 	if err != nil || session.CSRFToken == "" {
 		return "", false
 	}
 
 	if time.Now().Unix() > session.ExpiresAt {
-		_ = s.repository.Session.DeleteSessionByID(sessionID)
+		_ = s.repository.Session.DeleteById(sessionID)
 		return "", false
 	}
 
@@ -36,13 +36,13 @@ func (s *Service) RequireCSRF(r *http.Request) bool {
 		return false
 	}
 
-	session, err := s.repository.Session.GetSessionByID(sessionID)
+	session, err := s.repository.Session.GetById(sessionID)
 	if err != nil || session.CSRFToken == "" {
 		return false
 	}
 
 	if time.Now().Unix() > session.ExpiresAt {
-		_ = s.repository.Session.DeleteSessionByID(sessionID)
+		_ = s.repository.Session.DeleteById(sessionID)
 		return false
 	}
 

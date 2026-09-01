@@ -101,7 +101,7 @@ func (h *Handler) LoginSubmit(
 		return
 	}
 
-	if err := h.Auth.DeleteSessionsByUserID(userID); err != nil {
+	if err := h.Auth.DeleteByUserID(userID); err != nil {
 		http.Error(w, "Erro interno", http.StatusInternalServerError)
 		return
 	}

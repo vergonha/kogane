@@ -29,15 +29,15 @@ func (s *Service) NewSession(userID int64) (string, string, error) {
 		CSRFToken: csrfToken,
 	}
 
-	if err := s.repository.Session.CreateSession(session); err != nil {
+	if err := s.repository.Session.Create(session); err != nil {
 		return "", "", err
 	}
 
 	return sessionID, csrfToken, nil
 }
 
-func (s *Service) DeleteSessionsByUserID(userID int64) error {
-	return s.repository.Session.DeleteSessionsByUserID(userID)
+func (s *Service) DeleteByUserID(userID int64) error {
+	return s.repository.Session.DeleteByUserID(userID)
 }
 
 func (s *Service) GetSessionUserID(r *http.Request) (int64, bool) {
@@ -46,13 +46,13 @@ func (s *Service) GetSessionUserID(r *http.Request) (int64, bool) {
 		return 0, false
 	}
 
-	session, err := s.repository.Session.GetSessionByID(sessionID)
+	session, err := s.repository.Session.GetById(sessionID)
 	if err != nil {
 		return 0, false
 	}
 
 	if time.Now().Unix() > session.ExpiresAt {
-		_ = s.repository.Session.DeleteSessionByID(sessionID)
+		_ = s.repository.Session.DeleteById(sessionID)
 		return 0, false
 	}
 
@@ -65,7 +65,7 @@ func (s *Service) DeleteSession(r *http.Request) {
 		return
 	}
 
-	_ = s.repository.Session.DeleteSessionByID(sessionID)
+	_ = s.repository.Session.DeleteById(sessionID)
 }
 
 func (s *Service) sessionIDFromRequest(r *http.Request) (string, bool) {
