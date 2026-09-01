@@ -24,12 +24,11 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := database.Init(db); err != nil {
-		log.Fatal(err)
-	}
+	repository := database.NewRepository(db)
+	go database.StartSessionCleanup(repository.Session)
 
 	authService, err := auth.NewService(
-		db,
+		repository,
 		false,
 		config.DefaultBcryptCost,
 		config.DefaultSessionDuration,

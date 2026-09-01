@@ -1,10 +1,8 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
-	"time"
 
 	"kogane/internal/auth"
 	"kogane/internal/config"
@@ -29,9 +27,8 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := database.Init(db); err != nil {
-		log.Fatal(err)
-	}
+	repository := database.NewRepository(db)
+	go database.StartSessionCleanup(repository.Session)
 
 	renderer, err := apptemplates.New(
 		cfg.TemplatesGlob,
@@ -57,7 +54,7 @@ func main() {
 	}
 
 	authService, err := auth.NewService(
-		db,
+		repository,
 		cfg.Development,
 		cfg.BcryptCost,
 		cfg.SessionDuration,
@@ -67,8 +64,6 @@ func main() {
 	}
 
 	turnstileClient := turnstile.New(cfg.TurnstileSecretKey)
-
-	go startSessionCleanup(db)
 
 	h := handlers.New(
 		cfg,
@@ -84,18 +79,4 @@ func main() {
 	log.Printf("Servidor em %s", cfg.Addr)
 	log.Printf("Modo desenvolvimento: %v", cfg.Development)
 	log.Fatal(http.ListenAndServe(cfg.Addr, router))
-}
-
-func startSessionCleanup(db *sql.DB) {
-	ticker := time.NewTicker(15 * time.Minute)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		if err := database.CleanupExpiredSessions(
-			db,
-			time.Now().Unix(),
-		); err != nil {
-			log.Printf("session cleanup: %v", err)
-		}
-	}
 }

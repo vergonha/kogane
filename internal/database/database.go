@@ -2,9 +2,16 @@ package database
 
 import (
 	"database/sql"
+	"log"
+	"time"
 
 	_ "github.com/ncruces/go-sqlite3/driver"
 )
+
+type Repository struct {
+	User    *UserRepository
+	Session *SessionRepository
+}
 
 func Open(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dsn)
@@ -17,7 +24,19 @@ func Open(dsn string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	if err := Init(db); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+
 	return db, nil
+}
+
+func NewRepository(db *sql.DB) *Repository {
+	return &Repository{
+		User:    NewUserRepository(db),
+		Session: NewSessionRepository(db),
+	}
 }
 
 func Init(db *sql.DB) error {
@@ -36,9 +55,17 @@ func Init(db *sql.DB) error {
 			csrf_token TEXT NOT NULL
 		);
 	`)
-	if err != nil {
-		return err
-	}
 
-	return ensureUsersSchema(db)
+	return err
+}
+
+func StartSessionCleanup(session *SessionRepository) {
+	ticker := time.NewTicker(15 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if err := session.CleanupExpiredSessions(time.Now().Unix()); err != nil {
+			log.Printf("session cleanup: %v", err)
+		}
+	}
 }

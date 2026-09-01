@@ -3,10 +3,9 @@ package auth
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"kogane/internal/database"
 	"net/http"
 	"time"
-
-	"kogane/internal/database"
 )
 
 func (s *Service) NewSession(userID int64) (string, string, error) {
@@ -30,7 +29,7 @@ func (s *Service) NewSession(userID int64) (string, string, error) {
 		CSRFToken: csrfToken,
 	}
 
-	if err := database.CreateSession(s.db, session); err != nil {
+	if err := s.repository.Session.CreateSession(session); err != nil {
 		return "", "", err
 	}
 
@@ -38,7 +37,7 @@ func (s *Service) NewSession(userID int64) (string, string, error) {
 }
 
 func (s *Service) DeleteSessionsByUserID(userID int64) error {
-	return database.DeleteSessionsByUserID(s.db, userID)
+	return s.repository.Session.DeleteSessionsByUserID(userID)
 }
 
 func (s *Service) GetSessionUserID(r *http.Request) (int64, bool) {
@@ -47,13 +46,13 @@ func (s *Service) GetSessionUserID(r *http.Request) (int64, bool) {
 		return 0, false
 	}
 
-	session, err := database.GetSessionByID(s.db, sessionID)
+	session, err := s.repository.Session.GetSessionByID(sessionID)
 	if err != nil {
 		return 0, false
 	}
 
 	if time.Now().Unix() > session.ExpiresAt {
-		_ = database.DeleteSessionByID(s.db, sessionID)
+		_ = s.repository.Session.DeleteSessionByID(sessionID)
 		return 0, false
 	}
 
@@ -66,7 +65,7 @@ func (s *Service) DeleteSession(r *http.Request) {
 		return
 	}
 
-	_ = database.DeleteSessionByID(s.db, sessionID)
+	_ = s.repository.Session.DeleteSessionByID(sessionID)
 }
 
 func (s *Service) sessionIDFromRequest(r *http.Request) (string, bool) {

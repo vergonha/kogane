@@ -4,8 +4,6 @@ import (
 	"crypto/subtle"
 	"net/http"
 	"time"
-
-	"kogane/internal/database"
 )
 
 func (s *Service) GetCSRFToken(r *http.Request) (string, bool) {
@@ -14,13 +12,13 @@ func (s *Service) GetCSRFToken(r *http.Request) (string, bool) {
 		return "", false
 	}
 
-	session, err := database.GetSessionByID(s.db, sessionID)
+	session, err := s.repository.Session.GetSessionByID(sessionID)
 	if err != nil || session.CSRFToken == "" {
 		return "", false
 	}
 
 	if time.Now().Unix() > session.ExpiresAt {
-		_ = database.DeleteSessionByID(s.db, sessionID)
+		_ = s.repository.Session.DeleteSessionByID(sessionID)
 		return "", false
 	}
 
@@ -38,13 +36,13 @@ func (s *Service) RequireCSRF(r *http.Request) bool {
 		return false
 	}
 
-	session, err := database.GetSessionByID(s.db, sessionID)
+	session, err := s.repository.Session.GetSessionByID(sessionID)
 	if err != nil || session.CSRFToken == "" {
 		return false
 	}
 
 	if time.Now().Unix() > session.ExpiresAt {
-		_ = database.DeleteSessionByID(s.db, sessionID)
+		_ = s.repository.Session.DeleteSessionByID(sessionID)
 		return false
 	}
 

@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"database/sql"
 	"errors"
 	"net/http"
 	"strings"
@@ -21,7 +20,7 @@ var (
 )
 
 type Service struct {
-	db              *sql.DB
+	repository      *database.Repository
 	dummyHash       []byte
 	sessionDuration time.Duration
 	development     bool
@@ -29,7 +28,7 @@ type Service struct {
 }
 
 func NewService(
-	db *sql.DB,
+	repository *database.Repository,
 	development bool,
 	bcryptCost int,
 	sessionDuration time.Duration,
@@ -43,7 +42,7 @@ func NewService(
 	}
 
 	return &Service{
-		db:              db,
+		repository:      repository,
 		dummyHash:       dummyHash,
 		sessionDuration: sessionDuration,
 		development:     development,
@@ -54,10 +53,7 @@ func NewService(
 func (s *Service) Authenticate(
 	username, password string,
 ) (int64, error) {
-	user, err := database.GetUserByUsername(
-		s.db,
-		normalizeUsername(username),
-	)
+	user, err := s.repository.User.GetByUsername(normalizeUsername(username))
 	if err != nil {
 		_ = bcrypt.CompareHashAndPassword(
 			s.dummyHash,
@@ -77,7 +73,7 @@ func (s *Service) Authenticate(
 }
 
 func (s *Service) AdminExists() (bool, error) {
-	return database.AdminExists(s.db)
+	return s.repository.User.AdminExists()
 }
 
 func (s *Service) CreateUser(
@@ -98,8 +94,7 @@ func (s *Service) CreateUser(
 		return err
 	}
 
-	return database.CreateUser(
-		s.db,
+	return s.repository.User.Create(
 		username,
 		string(hash),
 		isAdmin,
@@ -127,8 +122,7 @@ func (s *Service) CreateInitialAdmin(
 		return false, err
 	}
 
-	return database.CreateInitialAdmin(
-		s.db,
+	return s.repository.User.CreateInitialAdmin(
 		username,
 		string(hash),
 	)
