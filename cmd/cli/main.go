@@ -8,9 +8,16 @@ import (
 	"kogane/internal/auth"
 	"kogane/internal/config"
 	"kogane/internal/database"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	if len(os.Args) != 4 || os.Args[1] != "create-user" {
 		log.Fatalf("uso: %s create-user <usuario> <senha>", os.Args[0])
 	}

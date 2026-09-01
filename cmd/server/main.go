@@ -13,9 +13,16 @@ import (
 	"kogane/internal/storage"
 	apptemplates "kogane/internal/templates"
 	"kogane/internal/turnstile"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
