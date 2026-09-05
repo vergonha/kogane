@@ -14,12 +14,12 @@ func (h *Handler) PDF(w http.ResponseWriter, r *http.Request) {
 
 	if !library.ValidComponent(title) ||
 		!library.ValidComponent(vol) {
-		http.Error(w, "Parâmetros inválidos", http.StatusBadRequest)
+		http.Error(w, "Invalid parameters", http.StatusBadRequest)
 		return
 	}
 
 	if !strings.HasSuffix(strings.ToLower(vol), ".pdf") {
-		http.Error(w, "Parâmetros inválidos", http.StatusBadRequest)
+		http.Error(w, "Invalid parameters", http.StatusBadRequest)
 		return
 	}
 
@@ -31,7 +31,7 @@ func (h *Handler) PDF(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(
 			w,
-			"Erro ao gerar link de download",
+			"Error generating download link",
 			http.StatusInternalServerError,
 		)
 		return

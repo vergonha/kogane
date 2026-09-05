@@ -51,14 +51,14 @@ func (h *Handler) render(
 ) {
 	if err := h.Renderer.Render(w, name, data); err != nil {
 		log.Printf("template %s: %v", name, err)
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 	}
 }
 
 func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	adminExists, err := h.Auth.AdminExists()
 	if err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (h *Handler) LoginSubmit(
 ) {
 	adminExists, err := h.Auth.AdminExists()
 	if err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -92,7 +92,7 @@ func (h *Handler) LoginSubmit(
 	}
 
 	if !h.Turnstile.Verify(r) {
-		http.Error(w, "CAPTCHA inválido", http.StatusUnauthorized)
+		http.Error(w, "Invalid CAPTCHA", http.StatusUnauthorized)
 		return
 	}
 
@@ -101,18 +101,18 @@ func (h *Handler) LoginSubmit(
 
 	userID, err := h.Auth.Authenticate(username, password)
 	if err != nil {
-		http.Error(w, "Credenciais inválidas", http.StatusUnauthorized)
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	if err := h.Auth.DeleteByUserID(userID); err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
 	sessionID, _, err := h.Auth.NewSession(userID)
 	if err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -142,7 +142,7 @@ func (h *Handler) registerInitialAdmin(
 		default:
 			http.Error(
 				w,
-				"Não foi possível criar o admin",
+				"Could not create admin",
 				http.StatusConflict,
 			)
 		}
@@ -156,13 +156,13 @@ func (h *Handler) registerInitialAdmin(
 
 	userID, err := h.Auth.Authenticate(username, password)
 	if err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
 	sessionID, _, err := h.Auth.NewSession(userID)
 	if err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -172,7 +172,7 @@ func (h *Handler) registerInitialAdmin(
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if !h.Auth.RequireCSRFFormValue(r) {
-		http.Error(w, "CSRF inválido", http.StatusForbidden)
+		http.Error(w, "Invalid CSRF", http.StatusForbidden)
 		return
 	}
 

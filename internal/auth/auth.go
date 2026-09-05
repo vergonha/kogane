@@ -14,9 +14,9 @@ import (
 const SessionCookieName = "session_id"
 
 var (
-	ErrInvalidCredentials  = errors.New("credenciais inválidas")
-	ErrInvalidRegistration = errors.New("dados de cadastro inválidos")
-	ErrPasswordsDoNotMatch = errors.New("senhas não conferem")
+	ErrInvalidCredentials  = errors.New("invalid credentials")
+	ErrInvalidRegistration = errors.New("invalid registration data")
+	ErrPasswordsDoNotMatch = errors.New("passwords do not match")
 )
 
 type Service struct {

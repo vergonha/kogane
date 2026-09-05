@@ -15,7 +15,7 @@ func (h *Handler) Reader(w http.ResponseWriter, r *http.Request) {
 	if !library.ValidComponent(title) ||
 		!library.ValidComponent(vol) ||
 		!strings.HasSuffix(strings.ToLower(vol), ".pdf") {
-		http.Error(w, "Parâmetros inválidos", http.StatusBadRequest)
+		http.Error(w, "Invalid parameters", http.StatusBadRequest)
 		return
 	}
 

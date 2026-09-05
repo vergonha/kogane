@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
@@ -72,7 +72,7 @@
   <header class="sticky top-0 z-50 w-full bg-[#181818]/90 backdrop-blur-md border-b border-neutral-800/60">
     <div class="flex flex-col gap-3 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
       <div class="flex items-center justify-between gap-3 sm:contents">
-        <a href="/dashboard" class="shrink-0 text-neutral-500 hover:text-neutral-300 transition">← voltar</a>
+        <a href="/dashboard" class="shrink-0 text-neutral-500 hover:text-neutral-300 transition">← back</a>
         <span class="block text-neutral-300 font-bold truncate max-w-full sm:max-w-[40vw]">
           {{.Title}} / Volume {{printf "%02s" .Vol}}
         </span>
@@ -81,10 +81,10 @@
       <div class="flex items-center justify-center gap-3 sm:gap-4 sm:justify-between">
         <div class="flex items-center gap-2 border border-neutral-800 rounded px-2 py-1 bg-neutral-900/30">
           <button id="zoomOut" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none"
-            title="Diminuir Zoom">-[z]</button>
+            title="Zoom Out">-[z]</button>
           <span id="zoomLevel" class="text-neutral-400 select-none min-w-[2.5rem] text-center">100%</span>
           <button id="zoomIn" class="text-neutral-500 hover:text-neutral-300 px-1 font-bold focus:outline-none"
-            title="Aumentar Zoom">+[x]</button>
+            title="Zoom In">+[x]</button>
         </div>
         <div class="flex items-center gap-1.5 text-neutral-500 shrink-0 select-none">
           <input id="pageInput" type="number" min="1"
@@ -98,7 +98,7 @@
     <div class="w-full bg-[#181818]/95">
       <div id="loadingText"
         class="hidden px-4 py-2 text-[11px] tracking-wider text-neutral-300 border-t border-neutral-800/40 sm:px-6">
-        buscando páginas...
+        fetching pages...
       </div>
       <div id="progressTrack" class="h-1.5 w-full bg-neutral-900/80 overflow-hidden relative">
         <div id="progressBar" class="h-full w-0 bg-neutral-300 transition-[width] duration-300 ease-out"></div>
@@ -159,7 +159,7 @@
     }
 
     const IS_MOBILE = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
-    const MAX_CANVAS_PIXELS = IS_MOBILE ? 5_500_000 : 9_000_000;
+    const MAX_CANVAS_PIXELS = IS_MOBILE ? 5_500_000 : 16_000_000;
     const RENDER_KEEP_RADIUS = 2;
 
     const containers = new Map();
@@ -182,7 +182,7 @@
       await showPage(parseInt(savedPage) || 1);
       setLoading(false);
     } catch (err) {
-      console.error('Erro ao carregar PDF:', err);
+      console.error('Error loading PDF:', err);
       showError();
     }
 
@@ -243,7 +243,7 @@
         }
       } catch (err) {
         if (err?.name !== 'RenderingCancelledException') {
-          console.warn(`Render falhou na página ${num}`, err);
+          console.warn(`Render failed on page ${num}`, err);
         }
       } finally {
         renderTasks.delete(num);
@@ -333,7 +333,7 @@
     }
 
     function showError() {
-      loadingText.textContent = 'ERRO AO CARREGAR PDF';
+      loadingText.textContent = 'ERROR LOADING PDF';
       loadingText.classList.remove('hidden');
       progressTrack.classList.remove('progress-loading');
       progressBar.style.width = '100%';

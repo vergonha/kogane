@@ -5,7 +5,7 @@ import "net/http"
 func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	csrfToken, ok := h.Auth.GetCSRFToken(r)
 	if !ok {
-		http.Error(w, "Sessão inválida", http.StatusUnauthorized)
+		http.Error(w, "Invalid session", http.StatusUnauthorized)
 		return
 	}
 

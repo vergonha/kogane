@@ -19,7 +19,7 @@ func main() {
 	}
 
 	if len(os.Args) != 4 || os.Args[1] != "create-user" {
-		log.Fatalf("uso: %s create-user <usuario> <senha>", os.Args[0])
+		log.Fatalf("usage: %s create-user <username> <password>", os.Args[0])
 	}
 
 	username := os.Args[2]
@@ -50,7 +50,7 @@ func main() {
 
 	if !adminExists {
 		log.Fatal(
-			"nenhum admin existe ainda; abra /login no server e crie o admin inicial primeiro",
+			"no admin exists yet; open /login on the server and create the initial admin first",
 		)
 	}
 
@@ -58,5 +58,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("usuário %q criado com sucesso\n", username)
+	fmt.Printf("user %q created successfully\n", username)
 }

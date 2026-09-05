@@ -17,7 +17,7 @@ func (h *Handler) ProgressGetAll(w http.ResponseWriter, r *http.Request) {
 	userID, _ := h.Auth.GetSessionUserID(r)
 	progress, err := h.Repository.ReadingProgress.GetAllByUser(userID)
 	if err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -30,7 +30,7 @@ func (h *Handler) ProgressGet(w http.ResponseWriter, r *http.Request) {
 
 	p, err := h.Repository.ReadingProgress.GetByUserAndManga(userID, mangadexID)
 	if err != nil {
-		http.Error(w, "Não encontrado", http.StatusNotFound)
+		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 
@@ -39,7 +39,7 @@ func (h *Handler) ProgressGet(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request) {
 	if !h.Auth.RequireCSRFHeader(r) {
-		http.Error(w, "CSRF inválido", http.StatusForbidden)
+		http.Error(w, "Invalid CSRF", http.StatusForbidden)
 		return
 	}
 
@@ -52,7 +52,7 @@ func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.MangadexID == "" || body.Volume == "" || body.Page < 1 {
-		http.Error(w, "Payload inválido", http.StatusBadRequest)
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
 		return
 	}
 
@@ -63,7 +63,7 @@ func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request) {
 		Page:       body.Page,
 	})
 	if err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -72,7 +72,7 @@ func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ProgressComplete(w http.ResponseWriter, r *http.Request) {
 	if !h.Auth.RequireCSRFHeader(r) {
-		http.Error(w, "CSRF inválido", http.StatusForbidden)
+		http.Error(w, "Invalid CSRF", http.StatusForbidden)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (h *Handler) ProgressComplete(w http.ResponseWriter, r *http.Request) {
 	mangadexID := r.PathValue("mangadex_id")
 
 	if err := h.Repository.ReadingProgress.MarkCompleted(userID, mangadexID); err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -89,7 +89,7 @@ func (h *Handler) ProgressComplete(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ProgressDelete(w http.ResponseWriter, r *http.Request) {
 	if !h.Auth.RequireCSRFHeader(r) {
-		http.Error(w, "CSRF inválido", http.StatusForbidden)
+		http.Error(w, "Invalid CSRF", http.StatusForbidden)
 		return
 	}
 
@@ -97,7 +97,7 @@ func (h *Handler) ProgressDelete(w http.ResponseWriter, r *http.Request) {
 	mangadexID := r.PathValue("mangadex_id")
 
 	if err := h.Repository.ReadingProgress.DeleteByUserAndManga(userID, mangadexID); err != nil {
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 

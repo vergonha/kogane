@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -43,7 +43,7 @@
         </div>
 
         <div class="relative w-full sm:w-64">
-            <input id="search-input" type="text" placeholder="filtrar acervo..."
+            <input id="search-input" type="text" placeholder="filter library..."
                 class="w-full bg-neutral-800/30 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition" />
         </div>
 
@@ -54,14 +54,14 @@
     </header>
 
     <section id="reading-now" class="hidden max-w-5xl w-full mx-auto mb-10">
-        <span class="text-xs text-neutral-600 tracking-wider">histórico:</span>
+        <span class="text-xs text-neutral-600 tracking-wider">history:</span>
         <div id="reading-now-list"
             class="mt-3 flex gap-3 overflow-x-auto pb-2 no-scrollbar border-b border-neutral-800/40 pb-8"></div>
     </section>
 
     <main id="manga-list" class="max-w-5xl w-full mx-auto flex-grow space-y-12">
         {{range .Mangas}}
-        {{/* data-mangadex-id e data-cover usados pelo bloco "lendo agora" */}}
+        {{/* data-mangadex-id and data-cover used by the "reading now" block */}}
         <section
             class="manga-item flex flex-col md:flex-row gap-6 border-b border-neutral-800/40 pb-8 last:border-b-0"
             data-title="{{.Title}}"
@@ -71,7 +71,7 @@
             {{if .Cover}}
             <div
                 class="w-full md:w-40 h-56 bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden shrink-0">
-                <img src="{{.Cover}}" alt="Capa de {{.Title}}" class="w-full h-full object-cover" loading="lazy" />
+                <img src="{{.Cover}}" alt="Cover of {{.Title}}" class="w-full h-full object-cover" loading="lazy" />
             </div>
             {{else}}
             <div
@@ -81,7 +81,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                 </svg>
-                <span class="text-[10px] uppercase tracking-wider">sem capa</span>
+                <span class="text-[10px] uppercase tracking-wider">no cover</span>
             </div>
             {{end}}
 
@@ -89,12 +89,12 @@
                 <div>
                     <h2 class="manga-title text-neutral-200 text-lg font-bold">{{.Title}}</h2>
                     <p class="manga-desc text-xs text-neutral-500 mt-2 leading-relaxed max-w-2xl line-clamp-3">
-                        {{if .Description}}{{.Description}}{{else}}Nenhuma descrição disponível ainda para este título.{{end}}
+                        {{if .Description}}{{.Description}}{{else}}No description available yet for this title.{{end}}
                     </p>
                 </div>
 
                 <div class="space-y-2">
-                    <span class="text-xs text-neutral-600 uppercase tracking-wider">volumes disponíveis</span>
+                    <span class="text-xs text-neutral-600 uppercase tracking-wider">available volumes</span>
                     <div class="flex flex-wrap gap-2">
                         {{$title := .Title}}
                         {{$mangadex_id := .MangaDexID}}
@@ -110,12 +110,12 @@
         </section>
         {{else}}
         <div class="text-center py-20">
-            <p class="text-neutral-600 text-sm">Nenhum mangá encontrado em /data.</p>
+            <p class="text-neutral-600 text-sm">No manga found in /data.</p>
         </div>
         {{end}}
 
         <div id="no-results" class="hidden text-center py-20">
-            <p class="text-neutral-600 text-sm">Nenhum resultado encontrado para a pesquisa.</p>
+            <p class="text-neutral-600 text-sm">No results found for the search.</p>
         </div>
     </main>
 
@@ -123,7 +123,7 @@
         class="text-[10px] text-neutral-600 flex flex-col md:flex-row justify-center items-center gap-1 md:gap-2 mt-12 pt-6 border-t border-neutral-800/40">
         <span>ap0calypse v1.0.0</span>
         <span class="hidden md:inline">|</span>
-        <span>{{len .Mangas}} títulos carregados</span>
+        <span>{{len .Mangas}} titles loaded</span>
     </footer>
 
     <script>
@@ -217,14 +217,14 @@
                 img.className = 'w-full h-full object-cover';
                 thumb.appendChild(img);
             } else {
-                thumb.textContent = 'sem capa';
+                thumb.textContent = 'no cover';
                 thumb.className  += ' flex items-center justify-center text-neutral-600 text-[10px]';
             }
 
             const del       = document.createElement('button');
             del.className   = 'absolute top-1 right-1 w-5 h-5 bg-neutral-900/80 border border-neutral-700 rounded-sm text-neutral-400 hover:text-white hover:border-neutral-500 flex items-center justify-center transition text-[10px] leading-none';
             del.textContent = '✕';
-            del.title       = 'remover do histórico';
+            del.title       = 'remove from history';
             del.addEventListener('click', async e => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -272,7 +272,7 @@
                 }
 
                 if (list.children.length) section.classList.remove('hidden');
-            } catch { /* best-effort, não quebra o dashboard */ }
+            } catch { /* best-effort, doesn't break the dashboard */ }
         })();
     </script>
 

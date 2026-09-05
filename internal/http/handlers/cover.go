@@ -12,7 +12,7 @@ func (h *Handler) Cover(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Query().Get("title")
 
 	if !library.ValidComponent(title) {
-		http.Error(w, "Acesso negado", http.StatusForbidden)
+		http.Error(w, "Access denied", http.StatusForbidden)
 		return
 	}
 
@@ -22,10 +22,10 @@ func (h *Handler) Cover(w http.ResponseWriter, r *http.Request) {
 		1*time.Hour,
 	)
 	if err != nil {
-		log.Printf("erro ao gerar link da imagem: %v", err)
+		log.Printf("error generating image link: %v", err)
 		http.Error(
 			w,
-			"Erro ao gerar link da imagem",
+			"Error generating image link",
 			http.StatusInternalServerError,
 		)
 		return
