@@ -12,6 +12,10 @@
 /scripts
 *.py
 *.json
+*.db-shm
+*.db-wal
+*.db-journal
+
 
 # Test binary, built with `go test -c`
 *.test

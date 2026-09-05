@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "modernc.org/sqlite"
 )
 
 type Repository struct {
@@ -16,7 +16,7 @@ type Repository struct {
 }
 
 func Open(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dsn)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
 	}
