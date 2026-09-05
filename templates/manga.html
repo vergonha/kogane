@@ -117,6 +117,11 @@
             title: {{.Manga.Title | js}},
             mangadexId: {{.Manga.MangaDexID | js}},
             volumes: {{.Manga.Volumes}},
+            progress: {{if .HasProgress}}{
+                Volume: {{.Progress.Volume | js}},
+                Page: {{.Progress.Page}},
+                Completed: {{.Progress.Completed}}
+            }{{else}}null{{end}},
         };
     </script>
     <script src="/ap0/js/manga.js" defer></script>

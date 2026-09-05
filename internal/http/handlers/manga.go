@@ -1,6 +1,8 @@
 package handlers
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func (h *Handler) MangaDetails(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Query().Get("title")
@@ -17,8 +19,13 @@ func (h *Handler) MangaDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, _ := h.Auth.GetSessionUserID(r)
+	progress, err := h.Repository.ReadingProgress.GetByUserAndManga(userID, manga.MangaDexID)
+
 	h.render(w, "manga.html", map[string]any{
-		"Manga":     manga,
-		"CSRFToken": csrfToken,
+		"Manga":       manga,
+		"CSRFToken":   csrfToken,
+		"Progress":    progress,
+		"HasProgress": err == nil,
 	})
 }

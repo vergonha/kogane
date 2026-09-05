@@ -19,7 +19,7 @@ function volumeLabel(filename, num) {
 }
 
 function readerLink(filename) {
-    return `/read?title=${encodeURIComponent(TITLE)}&vol=${encodeURIComponent(filename)}&mangadex_id=${encodeURIComponent(MANGADEX_ID)}`;
+    return `/read?title=${encodeURIComponent(TITLE)}&vol=${encodeURIComponent(filename)}`;
 }
 
 const volumes = (cfg.volumes || [])
@@ -84,7 +84,7 @@ function renderContinueReading(progress) {
     const sub = document.getElementById('continue-reading-sub');
     const link = document.getElementById('continue-reading-link');
 
-    const matched = progress && volumes.find(v => String(v.num) === String(progress.Volume));
+    const matched = progress && volumes.find(v => String(v.filename) === String(progress.Volume));
 
     if (matched) {
         label.textContent = matched.label;
@@ -104,22 +104,8 @@ function renderContinueReading(progress) {
     section.classList.remove('hidden');
 }
 
-async function fetchProgress() {
-    if (!MANGADEX_ID) return null;
-    try {
-        const res = await fetch(`/api/progress/${encodeURIComponent(MANGADEX_ID)}`);
-        if (!res.ok) return null;
-        return await res.json();
-    } catch {
-        return null;
-    }
-}
-
 searchInput.addEventListener('input', () => renderVolumes(window.__progress));
 
-(async () => {
-    const progress = await fetchProgress();
-    window.__progress = progress;
-    renderVolumes(progress);
-    renderContinueReading(progress);
-})();
+window.__progress = cfg.progress || null;
+renderVolumes(window.__progress);
+renderContinueReading(window.__progress);
