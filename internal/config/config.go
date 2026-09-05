@@ -52,7 +52,7 @@ func Load() (Config, error) {
 		cfg.R2AccessKeyID == "" ||
 		cfg.R2SecretAccessKey == "" {
 		return Config{}, fmt.Errorf(
-			"R2_BUCKET_NAME, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID e R2_SECRET_ACCESS_KEY devem estar configuradas",
+			"R2_BUCKET_NAME, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY must be configured",
 		)
 	}
 

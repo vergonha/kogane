@@ -87,7 +87,7 @@ func main() {
 
 	router := apphttp.NewRouter(h, authService)
 
-	log.Printf("Servidor em %s", cfg.Addr)
-	log.Printf("Modo desenvolvimento: %v", cfg.Development)
+	log.Printf("Server running on %s", cfg.Addr)
+	log.Printf("Development mode: %v", cfg.Development)
 	log.Fatal(http.ListenAndServe(cfg.Addr, router))
 }
