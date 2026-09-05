@@ -22,6 +22,10 @@ func Load(path string) (*Service, error) {
 		return nil, err
 	}
 
+	for i := range mangas {
+		mangas[i].fillFromMangaDex()
+	}
+
 	slices.SortStableFunc(mangas, func(a, b Manga) int {
 		if a.Cover != "" && b.Cover == "" {
 			return -1
@@ -39,6 +43,15 @@ func Load(path string) (*Service, error) {
 
 func (s *Service) All() []Manga {
 	return s.mangas
+}
+
+func (s *Service) ByTitle(title string) (Manga, bool) {
+	for _, m := range s.mangas {
+		if m.Title == title {
+			return m, true
+		}
+	}
+	return Manga{}, false
 }
 
 func ValidComponent(value string) bool {

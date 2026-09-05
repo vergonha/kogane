@@ -3,6 +3,13 @@ const CSRF = window.CSRF_TOKEN;
 const searchInput = document.getElementById('search-input');
 const mangaItems  = Array.from(document.querySelectorAll('.manga-item'));
 const noResults   = document.getElementById('no-results');
+const countEl     = document.getElementById('library-count');
+const moreWrap    = document.getElementById('see-more-wrap');
+const seeMoreBtn  = document.getElementById('see-more');
+const seeAllBtn   = document.getElementById('see-all');
+
+const PAGE_SIZE = 20;
+let shown = PAGE_SIZE;
 
 function normalizeText(text) {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -29,62 +36,104 @@ function getMatchScore(query, target) {
     return 0;
 }
 
-searchInput.addEventListener('input', e => {
-    const query = e.target.value.trim();
-    const container = document.getElementById('manga-list');
+function scoreItem(query, el) {
+    return Math.max(
+        getMatchScore(query, el.dataset.title || '') * 2,
+        getMatchScore(query, el.dataset.tags || ''),
+        getMatchScore(query, el.dataset.authors || ''),
+        getMatchScore(query, el.querySelector('.manga-desc')?.textContent || '')
+    );
+}
 
+function setCount(visible) {
+    if (!countEl) return;
+    countEl.textContent = mangaItems.length ? `${visible}/${mangaItems.length}` : '';
+}
+
+function render() {
+    const query = searchInput.value.trim();
+
+    // no query: plain library order, capped at `shown`
     if (!query) {
-        mangaItems.forEach(el => { el.style.display = ''; el.style.order = ''; });
+        mangaItems.forEach((el, i) => {
+            el.style.order   = '';
+            el.style.display = i < shown ? '' : 'none';
+        });
+
         noResults.classList.add('hidden');
-        container.classList.remove('flex', 'flex-col');
+
+        const remaining = mangaItems.length - shown;
+        moreWrap.classList.toggle('hidden', remaining <= 0);
+        if (remaining > 0) seeMoreBtn.textContent = `see more (${remaining}) ⌄`;
+
+        setCount(Math.min(shown, mangaItems.length));
         return;
     }
 
-    let hasVisible = false;
-    mangaItems
-        .map(el => ({
-            el,
-            score: Math.max(
-                getMatchScore(query, el.dataset.title || '') * 2,
-                getMatchScore(query, el.querySelector('.manga-desc')?.textContent || '')
-            ),
-        }))
-        .forEach(({ el, score }) => {
-            if (score > 0) {
-                el.style.display = '';
-                el.style.order   = -Math.round(score);
-                hasVisible       = true;
-            } else {
-                el.style.display = 'none';
-            }
-        });
+    // query: every match is shown, best score first
+    let visible = 0;
+    for (const el of mangaItems) {
+        const score = scoreItem(query, el);
+        if (score > 0) {
+            el.style.display = '';
+            el.style.order   = -Math.round(score);
+            visible++;
+        } else {
+            el.style.display = 'none';
+            el.style.order   = '';
+        }
+    }
 
-    container.classList.toggle('flex', hasVisible);
-    container.classList.toggle('flex-col', hasVisible);
-    noResults.classList.toggle('hidden', hasVisible);
+    noResults.classList.toggle('hidden', visible > 0);
+    moreWrap.classList.add('hidden');
+    setCount(visible);
+}
+
+searchInput.addEventListener('input', render);
+
+seeMoreBtn?.addEventListener('click', () => {
+    shown = Math.min(shown + PAGE_SIZE, mangaItems.length);
+    render();
 });
+
+seeAllBtn?.addEventListener('click', () => {
+    shown = mangaItems.length;
+    render();
+});
+
+render();
+
+const readingList    = document.getElementById('reading-now-list');
+const readingSection = document.getElementById('reading-now');
+const readingCount   = document.getElementById('reading-now-count');
 
 const mangaById = Object.fromEntries(
     mangaItems.map(el => [el.dataset.mangadexId, el.dataset])
 );
 
+function refreshReadingCount() {
+    const n = readingList.children.length;
+    readingCount.textContent = n ? `· ${n}` : '';
+    if (!n) readingSection.classList.add('hidden');
+}
+
 function buildReadingCard(manga, entry) {
     const { title, cover } = manga;
-    const vol  = entry.volume  ?? entry.Volume;
-    const page = entry.page    ?? entry.Page;
+    const vol  = entry.volume ?? entry.Volume;
+    const page = entry.page   ?? entry.Page;
     const id   = entry.mangadex_id ?? entry.MangadexID;
 
-    const link       = document.createElement('a');
-    link.href        = `/read?title=${encodeURIComponent(title)}&vol=${encodeURIComponent(vol)}&mangadex_id=${encodeURIComponent(id)}`;
-    link.className   = 'shrink-0 flex flex-col gap-1.5 w-24 group';
+    const link     = document.createElement('a');
+    link.href      = `/manga?title=${encodeURIComponent(title)}`;
+    link.className = 'shrink-0 flex flex-col gap-1.5 w-24 group';
 
-    const thumb      = document.createElement('div');
-    thumb.className  = 'relative w-24 h-32 bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden group-hover:border-neutral-600 transition';
+    const thumb     = document.createElement('div');
+    thumb.className = 'relative w-24 h-32 bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden group-hover:border-neutral-600 transition';
 
     if (cover) {
-        const img    = document.createElement('img');
-        img.src      = cover;
-        img.alt      = '';
+        const img     = document.createElement('img');
+        img.src       = cover;
+        img.alt       = '';
         img.className = 'w-full h-full object-cover';
         thumb.appendChild(img);
     } else {
@@ -105,17 +154,17 @@ function buildReadingCard(manga, entry) {
                 headers: { 'X-CSRF-Token': CSRF },
             });
             link.remove();
-            if (!list.children.length) section.classList.add('hidden');
+            refreshReadingCount();
         } catch { }
     });
     thumb.appendChild(del);
 
-    const titleEl      = document.createElement('p');
-    titleEl.className  = 'text-[10px] text-neutral-400 leading-tight truncate group-hover:text-neutral-200 transition';
+    const titleEl       = document.createElement('p');
+    titleEl.className   = 'text-[10px] text-neutral-400 leading-tight truncate group-hover:text-neutral-200 transition';
     titleEl.textContent = title;
 
-    const progressEl      = document.createElement('p');
-    progressEl.className  = 'text-[10px] text-neutral-600';
+    const progressEl       = document.createElement('p');
+    progressEl.className   = 'text-[10px] text-neutral-600';
     progressEl.textContent = `vol.${vol} · p.${page}`;
 
     link.append(thumb, titleEl, progressEl);
@@ -130,18 +179,17 @@ function buildReadingCard(manga, entry) {
         const entries = await res.json();
         if (!Array.isArray(entries) || !entries.length) return;
 
-        const list    = document.getElementById('reading-now-list');
-        const section = document.getElementById('reading-now');
-
         for (const entry of entries) {
-
             const id    = entry.mangadex_id ?? entry.MangadexID;
             const manga = mangaById[id];
             if (!manga) continue;
 
-            list.appendChild(buildReadingCard(manga, entry));
+            readingList.appendChild(buildReadingCard(manga, entry));
         }
 
-        if (list.children.length) section.classList.remove('hidden');
+        if (readingList.children.length) {
+            readingCount.textContent = `· ${readingList.children.length}`;
+            readingSection.classList.remove('hidden');
+        }
     } catch { /* best-effort, doesn't break the dashboard */ }
 })();

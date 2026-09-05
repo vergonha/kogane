@@ -43,6 +43,10 @@ func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 		httpmw.RequireAuth(authService, h.Dashboard),
 	)
 	mux.HandleFunc(
+		"GET /manga",
+		httpmw.RequireAuth(authService, h.MangaDetails),
+	)
+	mux.HandleFunc(
 		"GET /read",
 		httpmw.RequireAuth(authService, h.Reader),
 	)

@@ -36,7 +36,7 @@
     class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between p-8 selection:bg-neutral-700 selection:text-white">
 
     <header
-        class="max-w-5xl w-full mx-auto flex flex-col sm:flex-row gap-4 justify-between items-center border-b border-neutral-800/60 pb-6 mb-8 text-sm">
+        class="max-w-6xl w-full mx-auto flex flex-col sm:flex-row gap-4 justify-between items-center border-b border-neutral-800/60 pb-6 mb-8 text-sm">
         <div class="flex items-center gap-2">
             <span class="text-neutral-400">lib::</span>
             <h1 class="text-neutral-100 font-bold">ap0calypse</h1>
@@ -53,69 +53,114 @@
         </form>
     </header>
 
-    <section id="reading-now" class="hidden max-w-5xl w-full mx-auto mb-10">
-        <span class="text-xs text-neutral-600 tracking-wider">history:</span>
+    <section id="reading-now" class="hidden max-w-6xl w-full mx-auto mb-10">
+        <span class="text-xs text-neutral-600 tracking-wider">reading now <span id="reading-now-count"></span></span>
         <div id="reading-now-list"
             class="mt-3 flex gap-3 overflow-x-auto pb-2 no-scrollbar border-b border-neutral-800/40 pb-8"></div>
     </section>
 
-    <main id="manga-list" class="max-w-5xl w-full mx-auto flex-grow space-y-12">
-        {{range .Mangas}}
-        {{/* data-mangadex-id and data-cover used by the "reading now" block */}}
-        <section
-            class="manga-item flex flex-col md:flex-row gap-6 border-b border-neutral-800/40 pb-8 last:border-b-0"
-            data-title="{{.Title}}"
-            data-mangadex-id="{{.MangaDexID}}"
-            data-cover="{{.Cover}}">
+    <main class="max-w-6xl w-full mx-auto flex-grow">
 
-            {{if .Cover}}
-            <div
-                class="w-full md:w-40 h-56 bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden shrink-0">
-                <img src="{{.Cover}}" alt="Cover of {{.Title}}" class="w-full h-full object-cover" loading="lazy" />
-            </div>
-            {{else}}
-            <div
-                class="w-full md:w-40 h-56 bg-neutral-800/40 border border-neutral-800 rounded flex flex-col items-center justify-center text-neutral-600 shrink-0 select-none">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1"
-                    stroke="currentColor" class="w-8 h-8 mb-2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-                </svg>
-                <span class="text-[10px] uppercase tracking-wider">no cover</span>
-            </div>
+        <div class="flex items-baseline justify-between mb-4">
+            <span class="text-xs text-neutral-600 tracking-wider">library</span>
+            <span id="library-count" class="text-[10px] text-neutral-700"></span>
+        </div>
+
+        <div id="manga-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8">
+            {{range .Mangas}}
+
+            {{/* ---- prefer top-level fields, fall back to the mangadex block ---- */}}
+            {{$demo := .PublicationDemographic}}
+            {{if not $demo}}{{if .MangaDex}}{{$demo = .MangaDex.PublicationDemographic}}{{end}}{{end}}
+
+            {{$kind := ""}}
+            {{if eq .OriginalLanguage "ja"}}{{$kind = "manga"}}
+            {{else if eq .OriginalLanguage "ko"}}{{$kind = "manhwa"}}
+            {{else if eq .OriginalLanguage "zh"}}{{$kind = "manhua"}}
+            {{else if eq .OriginalLanguage "zh-hk"}}{{$kind = "manhua"}}
             {{end}}
 
-            <div class="flex-1 flex flex-col gap-4">
-                <div>
-                    <h2 class="manga-title text-neutral-200 text-lg font-bold">{{.Title}}</h2>
-                    <p class="manga-desc text-xs text-neutral-500 mt-2 leading-relaxed max-w-2xl line-clamp-3">
-                        {{if .Description}}{{.Description}}{{else}}No description available yet for this title.{{end}}
-                    </p>
-                </div>
+            <a href="/manga?title={{.Title}}"
+                class="manga-item group flex flex-col gap-2 focus:outline-none"
+                data-title="{{.Title}}"
+                data-mangadex-id="{{.MangaDexID}}"
+                data-cover="{{.Cover}}"
+                data-tags="{{if .Tags}}{{range .Tags}}{{.}}, {{end}}{{else if .MangaDex}}{{range .MangaDex.Tags}}{{.Name}}, {{end}}{{end}}"
+                data-authors="{{if .Authors}}{{range .Authors}}{{.}}, {{end}}{{else if .MangaDex}}{{range .MangaDex.Authors}}{{.Name}}, {{end}}{{end}}">
 
-                <div class="space-y-2">
-                    <span class="text-xs text-neutral-600 uppercase tracking-wider">available volumes</span>
-                    <div class="flex flex-wrap gap-2">
-                        {{$title := .Title}}
-                        {{$mangadex_id := .MangaDexID}}
-                        {{range .Volumes}}
-                        <a href="/read?title={{$title}}&vol={{.}}&mangadex_id={{$mangadex_id}}"
-                            class="bg-neutral-800/30 border border-neutral-800/80 hover:border-neutral-600/80 text-neutral-300 hover:text-white transition px-3 py-1.5 rounded text-xs">
-                            {{printf "%02s" .}}
-                        </a>
+                <div
+                    class="relative w-full aspect-[2/3] bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden group-hover:border-neutral-600 group-focus:border-neutral-500 transition">
+
+                    {{if .Cover}}
+                    <img src="{{.Cover}}" alt="Cover of {{.Title}}"
+                        class="w-full h-full object-cover" loading="lazy" />
+                    {{else}}
+                    <div class="w-full h-full flex flex-col items-center justify-center text-neutral-600 select-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1"
+                            stroke="currentColor" class="w-7 h-7 mb-2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                        </svg>
+                        <span class="text-[10px] tracking-wider">no cover</span>
+                    </div>
+                    {{end}}
+
+                    <div
+                        class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-1.5 pt-6 bg-gradient-to-t from-[#181818] via-[#181818]/70 to-transparent">
+                        <span class="text-[9px] text-neutral-300 bg-neutral-900/80 border border-neutral-700/70 rounded-sm px-1.5 py-0.5 leading-none">
+                            {{if $kind}}{{$kind}}{{else if $demo}}{{$demo}}{{else}}title{{end}}
+                        </span>
+                        {{if .Volumes}}
+                        <span class="text-[9px] text-neutral-400 bg-neutral-900/80 border border-neutral-800 rounded-sm px-1.5 py-0.5 leading-none">
+                            {{len .Volumes}}v
+                        </span>
                         {{end}}
                     </div>
                 </div>
+
+                <h2 class="manga-title text-[13px] text-neutral-300 font-bold leading-snug line-clamp-2 group-hover:text-white transition">
+                    {{.Title}}</h2>
+
+                {{/* tags: top-level first, mangadex second, and nothing at all is fine */}}
+                {{if .Tags}}
+                <div class="flex flex-wrap gap-1">
+                    {{range $i, $t := .Tags}}{{if lt $i 3}}
+                    <span class="text-[9px] text-neutral-500 border border-neutral-800 rounded-sm px-1.5 py-0.5 leading-none">{{$t}}</span>
+                    {{end}}{{end}}
+                </div>
+                {{else if .MangaDex}}{{if .MangaDex.Tags}}
+                <div class="flex flex-wrap gap-1">
+                    {{range $i, $t := .MangaDex.Tags}}{{if lt $i 3}}
+                    <span class="text-[9px] text-neutral-500 border border-neutral-800 rounded-sm px-1.5 py-0.5 leading-none">{{$t.Name}}</span>
+                    {{end}}{{end}}
+                </div>
+                {{end}}{{end}}
+
+                <p class="text-[10px] text-neutral-600 leading-none">
+                    {{if .Year}}{{.Year}}{{end}}{{if and .Year .Status}} · {{end}}{{if .Status}}{{.Status}}{{end}}
+                </p>
+
+                {{/* kept for the search index only */}}
+                <p class="manga-desc hidden">{{.Description}}</p>
+            </a>
+
+            {{else}}
+            <div class="col-span-full text-center py-20">
+                <p class="text-neutral-600 text-sm">No manga found in /data.</p>
             </div>
-        </section>
-        {{else}}
-        <div class="text-center py-20">
-            <p class="text-neutral-600 text-sm">No manga found in /data.</p>
+            {{end}}
         </div>
-        {{end}}
 
         <div id="no-results" class="hidden text-center py-20">
             <p class="text-neutral-600 text-sm">No results found for the search.</p>
+        </div>
+
+        <div id="see-more-wrap" class="hidden mt-10 pt-6 border-t border-neutral-800/40 flex justify-end items-center gap-4 text-xs">
+            <button id="see-more" type="button"
+                class="text-neutral-500 hover:text-neutral-200 transition focus:outline-none">see more ⌄</button>
+            <button id="see-all" type="button"
+                class="text-neutral-500 hover:text-neutral-200 border border-neutral-800 hover:border-neutral-600 rounded px-3 py-1.5 transition focus:outline-none">see
+                all ›</button>
         </div>
     </main>
 

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Manga.Title}} ⋆.˚ ap0calypse</title>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/ap0/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/ap0/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/ap0/favicon-16x16.png">
+    <link rel="manifest" href="/ap0/site.webmanifest">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+
+<body
+    class="bg-[#181818] text-[#8e8e8e] font-mono min-h-screen flex flex-col justify-between p-8 selection:bg-neutral-700 selection:text-white">
+
+    <header
+        class="max-w-3xl w-full mx-auto flex flex-row gap-4 justify-between items-center border-b border-neutral-800/60 pb-6 mb-8 text-sm">
+        <div class="flex items-center gap-4">
+            <a href="/dashboard" class="text-neutral-500 hover:text-neutral-300 transition">← library</a>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-neutral-400">lib::</span>
+            <h1 class="text-neutral-100 font-bold">ap0calypse</h1>
+        </div>
+        <form method="POST" action="/logout">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <button class="text-neutral-500 hover:text-neutral-300 transition focus:outline-none">logout</button>
+        </form>
+    </header>
+
+    <main class="max-w-3xl w-full mx-auto flex-grow space-y-10"
+        data-title="{{.Manga.Title}}"
+        data-mangadex-id="{{.Manga.MangaDexID}}"
+        id="manga-page">
+
+        <section class="flex flex-col sm:flex-row gap-6">
+            {{if .Manga.Cover}}
+            <div class="w-full sm:w-44 h-64 bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden shrink-0 mx-auto sm:mx-0">
+                <img src="{{.Manga.Cover}}" alt="Cover of {{.Manga.Title}}" class="w-full h-full object-cover" />
+            </div>
+            {{else}}
+            <div class="w-full sm:w-44 h-64 bg-neutral-800/40 border border-neutral-800 rounded flex items-center justify-center text-neutral-600 shrink-0 mx-auto sm:mx-0 select-none">
+                <span class="text-[10px] uppercase tracking-wider">no cover</span>
+            </div>
+            {{end}}
+
+            <div class="flex-1 flex flex-col gap-2 min-w-0 text-center sm:text-left">
+                <h2 class="text-neutral-100 text-xl font-bold">{{.Manga.Title}}</h2>
+
+                {{if or .Manga.Authors .Manga.Artists}}
+                <p class="text-xs text-neutral-500">
+                    {{range $i, $a := .Manga.Authors}}{{if $i}}, {{end}}{{$a}}{{end}}
+                    {{if and .Manga.Authors .Manga.Artists}} · {{end}}
+                    {{range $i, $a := .Manga.Artists}}{{if $i}}, {{end}}{{$a}}{{end}}
+                </p>
+                {{end}}
+
+                <p class="text-xs text-neutral-600">
+                    {{if .Manga.Year}}{{.Manga.Year}} · {{end}}{{if .Manga.Status}}{{.Manga.Status}} · {{end}}{{len .Manga.Volumes}} volumes
+                </p>
+
+                {{if .Manga.Tags}}
+                <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start mt-2">
+                    {{range .Manga.Tags}}
+                    <span class="text-[10px] text-neutral-500 border border-neutral-800 rounded px-2 py-0.5">{{.}}</span>
+                    {{end}}
+                </div>
+                {{end}}
+
+                <p class="text-xs text-neutral-500 leading-relaxed whitespace-pre-line mt-2">
+                    {{if .Manga.Description}}{{.Manga.Description}}{{else}}No description available yet for this title.{{end}}
+                </p>
+            </div>
+        </section>
+
+        <section id="continue-reading-section" class="hidden">
+            <span class="text-xs text-neutral-600 uppercase tracking-wider">continue reading</span>
+            <div class="border-t border-neutral-800/40 mt-2 pt-3 flex items-center justify-between gap-4">
+                <div>
+                    <p id="continue-reading-label" class="text-neutral-300 text-sm"></p>
+                    <p id="continue-reading-sub" class="text-xs text-neutral-600 mt-1"></p>
+                </div>
+                <a id="continue-reading-link"
+                    class="shrink-0 bg-neutral-800/30 border border-neutral-800 hover:border-neutral-600 text-neutral-300 hover:text-white transition px-4 py-2 rounded text-xs">
+                    Continue reading
+                </a>
+            </div>
+        </section>
+
+        <section>
+            <span class="text-xs text-neutral-600 uppercase tracking-wider">volumes</span>
+            <div class="border-t border-neutral-800/40 mt-2 pt-3 space-y-3">
+                <input id="volume-search" type="text" placeholder="Search volumes..."
+                    class="w-full bg-neutral-800/30 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 transition text-sm" />
+
+                <div id="volume-list" class="divide-y divide-neutral-800/40"></div>
+                <p id="volume-no-results" class="hidden text-center text-neutral-600 text-sm py-8">No volumes match your search.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer
+        class="text-[10px] text-neutral-600 flex flex-col md:flex-row justify-center items-center gap-1 md:gap-2 mt-12 pt-6 border-t border-neutral-800/40">
+        <span>ap0calypse v1.0.0</span>
+    </footer>
+
+    <script>
+        window.MANGA_CONFIG = {
+            title: {{.Manga.Title | js}},
+            mangadexId: {{.Manga.MangaDexID | js}},
+            volumes: {{.Manga.Volumes}},
+        };
+    </script>
+    <script src="/ap0/js/manga.js" defer></script>
+
+</body>
+</html>
