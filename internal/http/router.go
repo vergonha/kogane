@@ -2,11 +2,32 @@ package apphttp
 
 import (
 	"net/http"
+	"os"
 
 	"kogane/internal/auth"
 	"kogane/internal/http/handlers"
 	httpmw "kogane/internal/http/middleware"
 )
+
+// noDirListingFS hides directory listings from http.FileServer: any request
+// resolving to a directory is treated as not found instead of being rendered.
+type noDirListingFS struct {
+	http.FileSystem
+}
+
+func (fs noDirListingFS) Open(name string) (http.File, error) {
+	f, err := fs.FileSystem.Open(name)
+	if err != nil {
+		return nil, err
+	}
+
+	if stat, err := f.Stat(); err == nil && stat.IsDir() {
+		f.Close()
+		return nil, os.ErrNotExist
+	}
+
+	return f, nil
+}
 
 func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 	mux := http.NewServeMux()
@@ -38,7 +59,7 @@ func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 		"GET /ap0/",
 		http.StripPrefix(
 			"/ap0/",
-			http.FileServer(http.Dir("./static")),
+			http.FileServer(noDirListingFS{http.Dir("./static")}),
 		),
 	)
 
