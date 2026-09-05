@@ -158,8 +158,13 @@
       zoomInBtn.classList.toggle('cursor-not-allowed', isMax);
     }
 
+    const IS_MOBILE = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+    const MAX_CANVAS_PIXELS = IS_MOBILE ? 5_500_000 : 9_000_000;
+    const RENDER_KEEP_RADIUS = 2;
+
+    const containers = new Map();
     const renderedPages = new Map();
-    const renderQueue = new Set();
+    const renderTasks = new Map();
     let saveTimer;
     let resizeTimer;
     let currentPage = 1;
@@ -171,7 +176,6 @@
         `/pdf?title=${encodeURIComponent(title)}&vol=${encodeURIComponent(vol)}`
       ).promise;
 
-      buildPages(pdf.numPages);
       applyZoom();
 
       const savedPage = await fetchProgress();
@@ -182,65 +186,89 @@
       showError();
     }
 
-    function buildPages(total) {
-      const frag = document.createDocumentFragment();
-      for (let i = 1; i <= total; i++) {
-        const div = document.createElement('div');
-        div.id = `page-container-${i}`;
-        div.dataset.page = i;
-        div.className = 'w-full hidden';
+    function getOrCreateContainer(num) {
+      let div = containers.get(num);
+      if (div) return div;
 
-        const canvas = document.createElement('canvas');
-        canvas.id = `canvas-${i}`;
-        canvas.className = 'w-full block';
+      div = document.createElement('div');
+      div.id = `page-container-${num}`;
+      div.dataset.page = num;
+      div.className = 'w-full hidden';
+      div.style.contain = 'layout paint';
 
-        div.appendChild(canvas);
-        frag.appendChild(div);
-      }
-      wrapper.appendChild(frag);
+      const canvas = document.createElement('canvas');
+      canvas.id = `canvas-${num}`;
+      canvas.className = 'w-full block';
+      div.appendChild(canvas);
+
+      wrapper.appendChild(div);
+      containers.set(num, div);
+      return div;
+    }
+
+    function removePage(num) {
+      renderTasks.get(num)?.cancel();
+      renderTasks.delete(num);
+      renderedPages.delete(num);
+      containers.get(num)?.remove();
+      containers.delete(num);
     }
 
     async function triggerRender(num) {
-      if (renderedPages.has(num) || renderQueue.has(num)) return;
-      renderQueue.add(num);
+      if (renderedPages.has(num) || renderTasks.has(num)) return;
       try {
         const page = await pdf.getPage(num);
-        const canvas = document.getElementById(`canvas-${num}`);
-        if (!canvas) return;
+        const container = getOrCreateContainer(num);
+        const canvas = container.querySelector('canvas');
 
-        const dpr = window.devicePixelRatio || 1;
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         const rawVp = page.getViewport({ scale: 1 });
-        const scale = (720 / rawVp.width) * dpr * 1.5;
+        let scale = (720 / rawVp.width) * dpr;
+        const area = rawVp.width * rawVp.height * scale * scale;
+        if (area > MAX_CANVAS_PIXELS) scale *= Math.sqrt(MAX_CANVAS_PIXELS / area);
         const viewport = page.getViewport({ scale });
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
+        container.style.aspectRatio = `${rawVp.width} / ${rawVp.height}`;
 
-        const container = document.getElementById(`page-container-${num}`);
-        if (container) container.style.aspectRatio = `${rawVp.width} / ${rawVp.height}`;
+        const task = page.render({ canvasContext: canvas.getContext('2d'), viewport });
+        renderTasks.set(num, task);
+        await task.promise;
 
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-        renderedPages.set(num, 'rendered');
+        if (Math.abs(num - currentPage) > RENDER_KEEP_RADIUS) {
+          removePage(num);
+        } else {
+          renderedPages.set(num, 'rendered');
+        }
       } catch (err) {
-        console.warn(`Render falhou na página ${num}`, err);
+        if (err?.name !== 'RenderingCancelledException') {
+          console.warn(`Render falhou na página ${num}`, err);
+        }
       } finally {
-        renderQueue.delete(num);
+        renderTasks.delete(num);
+      }
+    }
+
+    function evictFarPages() {
+      for (const num of containers.keys()) {
+        if (Math.abs(num - currentPage) > RENDER_KEEP_RADIUS) removePage(num);
       }
     }
 
     async function showPage(num) {
       if (!pdf || num < 1 || num > pdf.numPages) return;
 
-      document.getElementById(`page-container-${currentPage}`)?.classList.add('hidden');
+      containers.get(currentPage)?.classList.add('hidden');
       currentPage = num;
-      document.getElementById(`page-container-${currentPage}`)?.classList.remove('hidden');
+      getOrCreateContainer(currentPage).classList.remove('hidden');
 
       readerContainer.scrollTop = 0;
       readerContainer.scrollLeft = 0;
-      window.scrollTo(0, 0);
 
       updateProgress(currentPage);
 
+      evictFarPages();
       await triggerRender(currentPage);
       if (currentPage < pdf.numPages) triggerRender(currentPage + 1);
     }
@@ -258,17 +286,31 @@
       }
     }
 
+    function sendProgress(page) {
+      fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ mangadex_id: MANGADEX_ID, volume: vol, page }),
+        keepalive: true,
+      }).catch(() => { });
+    }
+
     function saveProgress(page) {
       if (!MANGADEX_ID) return;
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        fetch('/api/progress', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
-          body: JSON.stringify({ mangadex_id: MANGADEX_ID, volume: vol, page }),
-        }).catch(() => { });
-      }, 1500);
+      saveTimer = setTimeout(() => sendProgress(page), 1500);
     }
+
+    function flushProgress() {
+      if (!MANGADEX_ID) return;
+      clearTimeout(saveTimer);
+      sendProgress(currentPage);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushProgress();
+    });
+    window.addEventListener('pagehide', flushProgress);
 
     function updateProgress(num) {
       pageInput.value = num;
