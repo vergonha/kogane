@@ -41,43 +41,77 @@
         data-mangadex-id="{{.Manga.MangaDexID}}"
         id="manga-page">
 
-        <section class="flex flex-col sm:flex-row gap-6">
-            {{if .Manga.Cover}}
-            <div class="w-full sm:w-44 h-64 bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden shrink-0 mx-auto sm:mx-0">
-                <img src="{{.Manga.Cover}}" alt="Cover of {{.Manga.Title}}" class="w-full h-full object-cover" />
+        <section id="manga-header" class="relative">
+
+            <div id="header-skeleton" class="absolute inset-0 z-10 flex flex-col sm:flex-row gap-6 sm:items-start animate-pulse">
+                <div class="w-40 sm:w-44 h-64 bg-neutral-800/40 border border-neutral-800 rounded shrink-0 mx-auto sm:mx-0"></div>
+                <div class="flex-1 flex flex-col gap-3 min-w-0 pt-1">
+                    <div class="h-5 w-2/5 bg-neutral-800/50 rounded"></div>
+                    <div class="h-3 w-1/3 bg-neutral-800/40 rounded"></div>
+                    <div class="h-3 w-1/4 bg-neutral-800/40 rounded"></div>
+                    <div class="flex flex-wrap gap-1.5 mt-1">
+                        <div class="h-4 w-14 bg-neutral-800/40 rounded"></div>
+                        <div class="h-4 w-12 bg-neutral-800/40 rounded"></div>
+                        <div class="h-4 w-16 bg-neutral-800/40 rounded"></div>
+                        <div class="h-4 w-12 bg-neutral-800/40 rounded"></div>
+                    </div>
+                    <div class="space-y-2 mt-2">
+                        <div class="h-2.5 w-full bg-neutral-800/40 rounded"></div>
+                        <div class="h-2.5 w-full bg-neutral-800/40 rounded"></div>
+                        <div class="h-2.5 w-11/12 bg-neutral-800/40 rounded"></div>
+                        <div class="h-2.5 w-4/5 bg-neutral-800/40 rounded"></div>
+                    </div>
+                </div>
             </div>
-            {{else}}
-            <div class="w-full sm:w-44 h-64 bg-neutral-800/40 border border-neutral-800 rounded flex items-center justify-center text-neutral-600 shrink-0 mx-auto sm:mx-0 select-none">
-                <span class="text-[10px] uppercase tracking-wider">no cover</span>
-            </div>
-            {{end}}
 
-            <div class="flex-1 flex flex-col gap-2 min-w-0 text-center sm:text-left">
-                <h2 class="text-neutral-100 text-xl font-bold">{{.Manga.Title}}</h2>
-
-                {{if or .Manga.Authors .Manga.Artists}}
-                <p class="text-xs text-neutral-500">
-                    {{range $i, $a := .Manga.Authors}}{{if $i}}, {{end}}{{$a}}{{end}}
-                    {{if and .Manga.Authors .Manga.Artists}} · {{end}}
-                    {{range $i, $a := .Manga.Artists}}{{if $i}}, {{end}}{{$a}}{{end}}
-                </p>
-                {{end}}
-
-                <p class="text-xs text-neutral-600">
-                    {{if .Manga.Year}}{{.Manga.Year}} · {{end}}{{if .Manga.Status}}{{.Manga.Status}} · {{end}}{{len .Manga.Volumes}} volumes
-                </p>
-
-                {{if .Manga.Tags}}
-                <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start mt-2">
-                    {{range .Manga.Tags}}
-                    <span class="text-[10px] text-neutral-500 border border-neutral-800 rounded px-2 py-0.5">{{.}}</span>
-                    {{end}}
+            <div id="header-content" class="invisible flex flex-col sm:flex-row gap-6 sm:items-start">
+                {{if .Manga.Cover}}
+                <div class="w-40 sm:w-44 bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden shrink-0 mx-auto sm:mx-0">
+                    <img id="cover-img" src="{{.Manga.Cover}}" alt="Cover of {{.Manga.Title}}"
+                        class="block w-full h-auto" />
+                </div>
+                {{else}}
+                <div class="w-40 sm:w-44 h-64 bg-neutral-800/40 border border-neutral-800 rounded flex items-center justify-center text-neutral-600 shrink-0 mx-auto sm:mx-0 select-none">
+                    <span class="text-[10px] uppercase tracking-wider">no cover</span>
                 </div>
                 {{end}}
 
-                <p class="text-xs text-neutral-500 leading-relaxed whitespace-pre-line mt-2">
-                    {{if .Manga.Description}}{{.Manga.Description}}{{else}}No description available yet for this title.{{end}}
-                </p>
+                <div class="flex-1 flex flex-col gap-2 min-w-0 text-center sm:text-left">
+                    <h2 class="text-neutral-100 text-xl font-bold">{{.Manga.Title}}</h2>
+
+                    {{if or .Manga.Authors .Manga.Artists}}
+                    <p class="text-xs text-neutral-500">
+                        {{range $i, $a := .Manga.Authors}}{{if $i}}, {{end}}{{$a}}{{end}}
+                        {{if and .Manga.Authors .Manga.Artists}} · {{end}}
+                        {{range $i, $a := .Manga.Artists}}{{if $i}}, {{end}}{{$a}}{{end}}
+                    </p>
+                    {{end}}
+
+                    <p class="text-xs text-neutral-600">
+                        {{if .Manga.Year}}{{.Manga.Year}} · {{end}}{{if .Manga.Status}}{{.Manga.Status}} · {{end}}{{len .Manga.Volumes}} volumes
+                    </p>
+
+                    {{if .Manga.Tags}}
+                    <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start mt-2">
+                        {{range .Manga.Tags}}
+                        <span class="text-[10px] text-neutral-500 border border-neutral-800 rounded px-2 py-0.5">{{.}}</span>
+                        {{end}}
+                    </div>
+                    {{end}}
+
+                    <div id="description-block" class="mt-2 flex flex-col items-center sm:items-start gap-1">
+                        <p id="manga-description" class="w-full text-xs text-neutral-500 leading-relaxed whitespace-pre-line">
+                            {{if .Manga.Description}}{{.Manga.Description}}{{else}}No description available yet for this title.{{end}}
+                        </p>
+                        <button id="description-toggle" type="button" aria-expanded="false" aria-label="Expand description"
+                            class="hidden text-neutral-600 hover:text-neutral-300 transition focus:outline-none">
+                            <svg id="description-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 transition-transform">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
 
