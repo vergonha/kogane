@@ -11,6 +11,19 @@ function volumeNumber(filename) {
     return match ? parseInt(match[1], 10) : null;
 }
 
+function sortKey(filename) {
+    return (filename.match(/\d+/g) || []).map(n => parseInt(n, 10));
+}
+
+function compareSortKeys(a, b) {
+    const len = Math.max(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+        const diff = (a[i] ?? -1) - (b[i] ?? -1);
+        if (diff !== 0) return diff;
+    }
+    return 0;
+}
+
 function volumeLabel(filename, num) {
     // if (num !== null) return `Vol. ${String(num).padStart(2, '0')}`;
     // return filename.replace(/\.pdf$/i, '');
@@ -27,7 +40,7 @@ const volumes = (cfg.volumes || [])
         const num = volumeNumber(filename);
         return { filename, num, label: volumeLabel(filename, num) };
     })
-    .sort((a, b) => (b.num ?? -1) - (a.num ?? -1));
+    .sort((a, b) => compareSortKeys(sortKey(a.filename), sortKey(b.filename)));
 
 function renderVolumes(progress) {
     const query = searchInput.value.trim().toLowerCase();
@@ -92,7 +105,7 @@ function renderContinueReading(progress) {
         link.href = readerLink(matched.filename);
         link.textContent = 'Continue reading';
     } else if (volumes.length) {
-        const first = volumes[volumes.length - 1];
+        const first = volumes[0];
         label.textContent = first.label;
         sub.textContent = '';
         link.href = readerLink(first.filename);
@@ -117,7 +130,6 @@ function setupMangaHeader() {
         if (skeleton) skeleton.classList.add('hidden');
     }
 
-    // trava de segurança: capa pendurada nunca deixa a página presa no skeleton
     const failsafe = setTimeout(reveal, 4000);
 
     const cover = document.getElementById('cover-img');
