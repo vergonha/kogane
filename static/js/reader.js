@@ -154,6 +154,7 @@ async function showPage(num) {
 
   readerContainer.scrollTop = 0;
   readerContainer.scrollLeft = 0;
+  window.scrollTo(0, 0);
 
   updateProgress(currentPage);
 
