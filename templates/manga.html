@@ -148,11 +148,11 @@
 
     <script>
         window.MANGA_CONFIG = {
-            title: {{.Manga.Title | js}},
-            mangadexId: {{.Manga.MangaDexID | js}},
+            title: {{.Manga.Title}},
+            mangadexId: {{.Manga.MangaDexID}},
             volumes: {{.Manga.Volumes}},
             progress: {{if .HasProgress}}{
-                Volume: {{.Progress.Volume | js}},
+                Volume: {{.Progress.Volume}},
                 Page: {{.Progress.Page}},
                 Completed: {{.Progress.Completed}}
             }{{else}}null{{end}},
