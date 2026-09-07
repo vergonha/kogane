@@ -150,6 +150,7 @@ log in, click into a title, open a volume, flip through a few pages, close it. g
 - [ ] some kind of rate limit on login, turnstile alone isn't enough forever
 - [ ] better handling for `library.json` entries missing mangadex metadata
 - [ ] rewriting the css, most of it is inherited from a 2023 version of this idea and it shows
+- [ ] og:image previews currently hotlink covers from mangadex's CDN, switch to serving covers from our own r2 bucket once there's a public (or signed, low-ttl) route for them
 
 ---
 

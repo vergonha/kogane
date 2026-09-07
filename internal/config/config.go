@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -12,11 +13,13 @@ const (
 	DefaultTemplatesGlob   = "templates/*.html"
 	DefaultBcryptCost      = 12
 	DefaultSessionDuration = 2 * time.Hour
+	DefaultPublicURL       = "http://localhost:8080"
 )
 
 type Config struct {
 	Development        bool
 	Addr               string
+	PublicURL          string
 	DBDSN              string
 	TurnstileSecretKey string
 	TurnstileSiteKey   string
@@ -34,6 +37,7 @@ func Load() (Config, error) {
 	cfg := Config{
 		Development:        os.Getenv("KOGANE_DEVELOPMENT") == "true",
 		Addr:               envOr("KOGANE_SERVER_PORT", ":8080"),
+		PublicURL:          strings.TrimSuffix(envOr("KOGANE_PUBLIC_URL", DefaultPublicURL), "/"),
 		DBDSN:              DBDSN(),
 		TurnstileSecretKey: os.Getenv("CLOUDFLARE_TURNSTILE_SECRET_KEY"),
 		TurnstileSiteKey:   os.Getenv("CLOUDFLARE_TURNSTILE_SITE_KEY"),

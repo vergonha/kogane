@@ -1,5 +1,7 @@
 package library
 
+import "unicode/utf8"
+
 type Manga struct {
 	Title                  string        `json:"Title"`
 	Volumes                []string      `json:"Volumes"`
@@ -29,6 +31,11 @@ type mangaDexMeta struct {
 	Authors                []mangaDexNamedItem `json:"authors"`
 	Artists                []mangaDexNamedItem `json:"artists"`
 	PublicationDemographic string              `json:"publication_demographic"`
+	CoverArt               *mangaDexCoverArt   `json:"cover_art"`
+}
+
+type mangaDexCoverArt struct {
+	FileName string `json:"fileName"`
 }
 
 type mangaDexNamedItem struct {
@@ -46,8 +53,24 @@ func names(items []mangaDexNamedItem) []string {
 	return out
 }
 
-// fillFromMangaDex populates the flattened metadata fields from the nested
-// "mangadex" object when the top-level fields weren't already set.
+func (m Manga) PreviewDescription() string {
+	const limit = 150
+
+	if utf8.RuneCountInString(m.Description) <= limit {
+		return m.Description
+	}
+
+	runes := []rune(m.Description)
+	return string(runes[:limit]) + "..."
+}
+
+func (m Manga) PreviewImageURL() string {
+	if m.MangaDex == nil || m.MangaDex.CoverArt == nil || m.MangaDex.CoverArt.FileName == "" || m.MangaDexID == "" {
+		return ""
+	}
+	return "https://uploads.mangadex.org/covers/" + m.MangaDexID + "/" + m.MangaDex.CoverArt.FileName
+}
+
 func (m *Manga) fillFromMangaDex() {
 	if m.MangaDex == nil {
 		return

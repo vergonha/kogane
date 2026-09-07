@@ -4,6 +4,23 @@ import (
 	"net/http"
 )
 
+func (h *Handler) MangaPreview(w http.ResponseWriter, r *http.Request) {
+	title := r.URL.Query().Get("title")
+
+	manga, ok := h.LibrarySvc.ByTitle(title)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+
+	pageURL := h.Config.PublicURL + r.URL.RequestURI()
+
+	h.render(w, "manga_preview.html", map[string]any{
+		"Manga":   manga,
+		"PageURL": pageURL,
+	})
+}
+
 func (h *Handler) MangaDetails(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Query().Get("title")
 

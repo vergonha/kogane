@@ -44,7 +44,13 @@ func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 	)
 	mux.HandleFunc(
 		"GET /manga",
-		httpmw.RequireAuth(authService, h.MangaDetails),
+		func(w http.ResponseWriter, r *http.Request) {
+			if httpmw.IsSocialPreviewBot(r.UserAgent()) {
+				h.MangaPreview(w, r)
+				return
+			}
+			httpmw.RequireAuth(authService, h.MangaDetails)(w, r)
+		},
 	)
 	mux.HandleFunc(
 		"GET /read",
