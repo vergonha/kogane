@@ -146,3 +146,36 @@ More concrete structs; fewer `any` values, generic maps, type assertions, conver
 The metric is not files changed. It is:
 
 > **Can an engineer trace the behavior without jumping through unnecessary abstractions?**
+
+## review output
+
+the PR must always receive exactly one PR-level review comment. this is not optional.
+
+if there are actionable, high-confidence findings:
+
+- post each finding as an inline PR comment, attached to the smallest
+  relevant changed line
+- explain the concrete problem and the fix
+- in addition, post one PR-level review comment summarizing what was
+  checked overall (see below), findings included
+
+if there are no actionable findings, or after listing findings:
+
+- post one PR-level review comment that reads like an actual review,
+  not a rubber stamp
+- go through the rule categories that actually applied to this diff
+  (architecture, typing, errors, concurrency, boundaries, testing,
+  security, pass-through layers) and say concretely what was checked
+  and why it holds up — reference actual function/type names from
+  the diff, not generic statements
+- if a category didn't apply to this diff (e.g. no concurrency code
+  touched), skip it — don't pad with irrelevant checks
+- end the comment with "lgtm" on its own line if nothing actionable
+  was found
+
+do not pad this with praise, filler, or a restatement of the diff.
+every line should carry information: what was checked, and why it holds up.
+
+the final assistant response is not the PR review. the PR review
+only exists once it has been posted via the review-submission tool.
+if you have not called that tool, the review has not happened.
