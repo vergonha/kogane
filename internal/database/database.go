@@ -73,7 +73,7 @@ func Init(db *sql.DB) error {
 	return err
 }
 
-func StartSessionCleanup(ctx context.Context, repo *Repository) {
+func StartSessionCleanup(ctx context.Context, sessions *SessionRepository) {
 	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
 
@@ -82,7 +82,7 @@ func StartSessionCleanup(ctx context.Context, repo *Repository) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := repo.Session.CleanupExpiredSessions(time.Now().Unix()); err != nil {
+			if err := sessions.CleanupExpiredSessions(time.Now().Unix()); err != nil {
 				log.Printf("session cleanup: %v", err)
 			}
 		}
