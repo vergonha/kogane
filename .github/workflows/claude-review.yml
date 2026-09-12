@@ -1,0 +1,84 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: true
+          display_report: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this pull request.
+
+            Read CLAUDE.md first, then read the relevant
+            files under .claude/rules/.
+
+            Follow the repository's engineering rules exactly.
+
+            Focus on:
+            - architecture
+            - go simplicity
+            - error handling
+            - concurrency
+            - security
+            - input boundaries
+            - typing
+            - testing
+            - unnecessary abstraction
+            - pass-through layers
+
+            Review the actual diff and inspect surrounding code
+            when necessary.
+
+            Only report actionable, high-confidence findings.
+            Do not manufacture issues.
+
+            IMPORTANT: The review result must always be posted to the PR.
+
+            If you find one or more actionable findings:
+            - post each finding as an inline PR comment on the relevant changed line
+            - use the GitHub inline comment tool
+            - do not merely describe the findings in the final response
+            - each finding must explain what is wrong, why it matters,
+              and what should be changed
+            - keep comments concise and consistent with the repository's
+              review writing style
+
+            If you find no actionable findings:
+            - do not create any inline comments
+            - post exactly one PR comment
+            - the entire comment must contain exactly:
+
+            lgtm
+
+            Do not add a summary, explanation, or any other text to the lgtm comment.
+
+            the final response is not the PR review.
+            the PR comment is the review output.
+
+            do not finish the review without posting either:
+            1. one or more inline findings, or
+            2. exactly one PR comment containing only "lgtm".
