@@ -21,7 +21,7 @@ func (r *UserRepository) Create(username string, hash string, isAdmin bool) erro
 	_, err := r.db.Exec(`
 		INSERT INTO users (username, hash, is_admin)
 		VALUES (?, ?, ?)
-	`, username, hash, boolToInt(isAdmin))
+	`, username, hash, isAdmin)
 
 	return err
 }
@@ -62,7 +62,6 @@ func (r *UserRepository) AdminExists() (bool, error) {
 
 func (r *UserRepository) GetByUsername(username string) (User, error) {
 	var user User
-	var isAdmin int
 
 	err := r.db.QueryRow(`
 		SELECT id, username, hash, is_admin
@@ -72,20 +71,8 @@ func (r *UserRepository) GetByUsername(username string) (User, error) {
 		&user.ID,
 		&user.Username,
 		&user.Hash,
-		&isAdmin,
+		&user.IsAdmin,
 	)
-	if err != nil {
-		return User{}, err
-	}
 
-	user.IsAdmin = isAdmin == 1
-	return user, nil
-}
-
-func boolToInt(value bool) int {
-	if value {
-		return 1
-	}
-
-	return 0
+	return user, err
 }

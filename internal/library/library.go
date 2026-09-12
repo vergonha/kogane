@@ -7,17 +7,15 @@ import (
 	"strings"
 )
 
-type Service struct {
-	mangas []Manga
-}
+type Library []Manga
 
-func Load(path string) (*Service, error) {
+func Load(path string) (Library, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	var mangas []Manga
+	var mangas Library
 	if err := json.Unmarshal(data, &mangas); err != nil {
 		return nil, err
 	}
@@ -26,6 +24,7 @@ func Load(path string) (*Service, error) {
 		mangas[i].fillFromMangaDex()
 	}
 
+	// Entries with a cover render first on the dashboard grid.
 	slices.SortStableFunc(mangas, func(a, b Manga) int {
 		if a.Cover != "" && b.Cover == "" {
 			return -1
@@ -36,30 +35,23 @@ func Load(path string) (*Service, error) {
 		return 0
 	})
 
-	return &Service{
-		mangas: mangas,
-	}, nil
+	return mangas, nil
 }
 
-func (s *Service) All() []Manga {
-	return s.mangas
-}
-
-func (s *Service) ByTitle(title string) (Manga, bool) {
-	for _, m := range s.mangas {
+func (l Library) ByTitle(title string) (Manga, bool) {
+	for _, m := range l {
 		if m.Title == title {
 			return m, true
 		}
 	}
+
 	return Manga{}, false
 }
 
+// ValidComponent reports whether value is safe to use as a single path segment
+// of an object key: no traversal, no separators.
 func ValidComponent(value string) bool {
-	if value == "" {
-		return false
-	}
-
-	if value == "." || value == ".." {
+	if value == "" || value == "." || value == ".." {
 		return false
 	}
 

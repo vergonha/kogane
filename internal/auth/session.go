@@ -2,25 +2,54 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/hex"
-	"kogane/internal/database"
+	"log"
 	"net/http"
 	"time"
+
+	"kogane/internal/database"
 )
 
-func (s *Service) NewSession(userID int64) (string, string, error) {
-	sessionBytes := make([]byte, 32)
-	if _, err := rand.Read(sessionBytes); err != nil {
-		return "", "", err
+const SessionCookieName = "session_id"
+
+// Handler is an http.HandlerFunc for a route behind RequireAuth, which has
+// already loaded and validated the session.
+type Handler func(w http.ResponseWriter, r *http.Request, session database.Session)
+
+func (s *Service) RequireAuth(next Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		session, ok := s.session(r)
+		if !ok {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+
+		next(w, r, session)
+	}
+}
+
+func ValidCSRF(session database.Session, token string) bool {
+	if token == "" {
+		return false
 	}
 
-	csrfBytes := make([]byte, 32)
-	if _, err := rand.Read(csrfBytes); err != nil {
-		return "", "", err
+	return subtle.ConstantTimeCompare(
+		[]byte(session.CSRFToken),
+		[]byte(token),
+	) == 1
+}
+
+func (s *Service) NewSession(userID int64) (database.Session, error) {
+	sessionID, err := randomToken()
+	if err != nil {
+		return database.Session{}, err
 	}
 
-	sessionID := hex.EncodeToString(sessionBytes)
-	csrfToken := hex.EncodeToString(csrfBytes)
+	csrfToken, err := randomToken()
+	if err != nil {
+		return database.Session{}, err
+	}
 
 	session := database.Session{
 		ID:        sessionID,
@@ -30,49 +59,53 @@ func (s *Service) NewSession(userID int64) (string, string, error) {
 	}
 
 	if err := s.repository.Session.Create(session); err != nil {
-		return "", "", err
+		return database.Session{}, err
 	}
 
-	return sessionID, csrfToken, nil
+	return session, nil
 }
 
 func (s *Service) DeleteByUserID(userID int64) error {
 	return s.repository.Session.DeleteByUserID(userID)
 }
 
-func (s *Service) GetSessionUserID(r *http.Request) (int64, bool) {
-	sessionID, ok := s.sessionIDFromRequest(r)
-	if !ok {
-		return 0, false
-	}
-
-	session, err := s.repository.Session.GetById(sessionID)
-	if err != nil {
-		return 0, false
-	}
-
-	if time.Now().Unix() > session.ExpiresAt {
-		_ = s.repository.Session.DeleteById(sessionID)
-		return 0, false
-	}
-
-	return session.UserID, true
-}
-
 func (s *Service) DeleteSession(r *http.Request) {
-	sessionID, ok := s.sessionIDFromRequest(r)
-	if !ok {
+	cookie, err := r.Cookie(SessionCookieName)
+	if err != nil {
 		return
 	}
 
-	_ = s.repository.Session.DeleteById(sessionID)
+	if err := s.repository.Session.DeleteById(cookie.Value); err != nil {
+		log.Printf("delete session: %v", err)
+	}
 }
 
-func (s *Service) sessionIDFromRequest(r *http.Request) (string, bool) {
+func (s *Service) session(r *http.Request) (database.Session, bool) {
 	cookie, err := r.Cookie(SessionCookieName)
 	if err != nil || cookie.Value == "" {
-		return "", false
+		return database.Session{}, false
 	}
 
-	return cookie.Value, true
+	session, err := s.repository.Session.GetById(cookie.Value)
+	if err != nil {
+		return database.Session{}, false
+	}
+
+	if time.Now().Unix() > session.ExpiresAt {
+		if err := s.repository.Session.DeleteById(session.ID); err != nil {
+			log.Printf("delete expired session: %v", err)
+		}
+		return database.Session{}, false
+	}
+
+	return session, true
+}
+
+func randomToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(b), nil
 }

@@ -2,48 +2,51 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
+	"kogane/internal/auth"
 	"kogane/internal/database"
 )
 
-func (h *Handler) writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
+// csrfOK rejects state-changing API calls that do not echo the session token.
+func csrfOK(w http.ResponseWriter, r *http.Request, session database.Session) bool {
+	if auth.ValidCSRF(session, r.Header.Get("X-CSRF-Token")) {
+		return true
+	}
+
+	http.Error(w, "Invalid CSRF", http.StatusForbidden)
+	return false
 }
 
-func (h *Handler) ProgressGetAll(w http.ResponseWriter, r *http.Request) {
-	userID, _ := h.Auth.GetSessionUserID(r)
-	progress, err := h.Repository.ReadingProgress.GetAllByUser(userID)
+func (h *Handler) ProgressGetAll(w http.ResponseWriter, r *http.Request, session database.Session) {
+	progress, err := h.Repository.ReadingProgress.GetAllByUser(session.UserID)
 	if err != nil {
+		log.Printf("list progress for user %d: %v", session.UserID, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
-	h.writeJSON(w, http.StatusOK, progress)
+	writeJSON(w, progress)
 }
 
-func (h *Handler) ProgressGet(w http.ResponseWriter, r *http.Request) {
-	userID, _ := h.Auth.GetSessionUserID(r)
-	mangadexID := r.PathValue("mangadex_id")
-
-	p, err := h.Repository.ReadingProgress.GetByUserAndManga(userID, mangadexID)
+func (h *Handler) ProgressGet(w http.ResponseWriter, r *http.Request, session database.Session) {
+	progress, err := h.Repository.ReadingProgress.GetByUserAndManga(
+		session.UserID,
+		r.PathValue("mangadex_id"),
+	)
 	if err != nil {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 
-	h.writeJSON(w, http.StatusOK, p)
+	writeJSON(w, progress)
 }
 
-func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request) {
-	if !h.Auth.RequireCSRFHeader(r) {
-		http.Error(w, "Invalid CSRF", http.StatusForbidden)
+func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request, session database.Session) {
+	if !csrfOK(w, r, session) {
 		return
 	}
-
-	userID, _ := h.Auth.GetSessionUserID(r)
 
 	var body struct {
 		MangadexID string `json:"mangadex_id"`
@@ -51,18 +54,20 @@ func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request) {
 		Page       int    `json:"page"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.MangadexID == "" || body.Volume == "" || body.Page < 1 {
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil ||
+		body.MangadexID == "" || body.Volume == "" || body.Page < 1 {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
 		return
 	}
 
 	err := h.Repository.ReadingProgress.Upsert(database.ReadingProgress{
-		UserID:     userID,
+		UserID:     session.UserID,
 		MangadexID: body.MangadexID,
 		Volume:     body.Volume,
 		Page:       body.Page,
 	})
 	if err != nil {
+		log.Printf("upsert progress for %s: %v", body.MangadexID, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
@@ -70,16 +75,15 @@ func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) ProgressComplete(w http.ResponseWriter, r *http.Request) {
-	if !h.Auth.RequireCSRFHeader(r) {
-		http.Error(w, "Invalid CSRF", http.StatusForbidden)
+func (h *Handler) ProgressComplete(w http.ResponseWriter, r *http.Request, session database.Session) {
+	if !csrfOK(w, r, session) {
 		return
 	}
 
-	userID, _ := h.Auth.GetSessionUserID(r)
 	mangadexID := r.PathValue("mangadex_id")
 
-	if err := h.Repository.ReadingProgress.MarkCompleted(userID, mangadexID); err != nil {
+	if err := h.Repository.ReadingProgress.MarkCompleted(session.UserID, mangadexID); err != nil {
+		log.Printf("complete progress for %s: %v", mangadexID, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
@@ -87,16 +91,15 @@ func (h *Handler) ProgressComplete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) ProgressDelete(w http.ResponseWriter, r *http.Request) {
-	if !h.Auth.RequireCSRFHeader(r) {
-		http.Error(w, "Invalid CSRF", http.StatusForbidden)
+func (h *Handler) ProgressDelete(w http.ResponseWriter, r *http.Request, session database.Session) {
+	if !csrfOK(w, r, session) {
 		return
 	}
 
-	userID, _ := h.Auth.GetSessionUserID(r)
 	mangadexID := r.PathValue("mangadex_id")
 
-	if err := h.Repository.ReadingProgress.DeleteByUserAndManga(userID, mangadexID); err != nil {
+	if err := h.Repository.ReadingProgress.DeleteByUserAndManga(session.UserID, mangadexID); err != nil {
+		log.Printf("delete progress for %s: %v", mangadexID, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}

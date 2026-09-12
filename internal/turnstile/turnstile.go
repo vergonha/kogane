@@ -32,11 +32,6 @@ func New(secretKey string) *Client {
 }
 
 func (c *Client) Verify(r *http.Request) bool {
-	if c.SecretKey == "" {
-		log.Fatal("CLOUDFLARE_TURNSTILE_SECRET_KEY not configured")
-		return false
-	}
-
 	token := r.FormValue("cf-turnstile-response")
 	if token == "" {
 		return false

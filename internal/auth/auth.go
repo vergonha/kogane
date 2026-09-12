@@ -11,8 +11,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const SessionCookieName = "session_id"
-
 var (
 	ErrInvalidCredentials  = errors.New("invalid credentials")
 	ErrInvalidRegistration = errors.New("invalid registration data")
@@ -50,15 +48,12 @@ func NewService(
 	}, nil
 }
 
-func (s *Service) Authenticate(
-	username, password string,
-) (int64, error) {
-	user, err := s.repository.User.GetByUsername(normalizeUsername(username))
+func (s *Service) Authenticate(username, password string) (int64, error) {
+	user, err := s.repository.User.GetByUsername(strings.TrimSpace(username))
 	if err != nil {
-		_ = bcrypt.CompareHashAndPassword(
-			s.dummyHash,
-			[]byte(password),
-		)
+		// Hash a dummy password anyway so an unknown username does not answer
+		// measurably faster than a wrong password.
+		_ = bcrypt.CompareHashAndPassword(s.dummyHash, []byte(password))
 		return 0, ErrInvalidCredentials
 	}
 
@@ -76,62 +71,45 @@ func (s *Service) AdminExists() (bool, error) {
 	return s.repository.User.AdminExists()
 }
 
-func (s *Service) CreateUser(
-	username, password string,
-	isAdmin bool,
-) error {
-	username = normalizeUsername(username)
-
-	if err := validateNewUserInput(username, password); err != nil {
-		return err
-	}
-
-	hash, err := bcrypt.GenerateFromPassword(
-		[]byte(password),
-		s.bcryptCost,
-	)
+func (s *Service) CreateUser(username, password string, isAdmin bool) error {
+	username, hash, err := s.newCredentials(username, password)
 	if err != nil {
 		return err
 	}
 
-	return s.repository.User.Create(
-		username,
-		string(hash),
-		isAdmin,
-	)
+	return s.repository.User.Create(username, hash, isAdmin)
 }
 
-func (s *Service) CreateInitialAdmin(
-	username, password, confirm string,
-) (bool, error) {
+// CreateInitialAdmin reports whether it created the admin; it does nothing and
+// returns false when another admin already exists.
+func (s *Service) CreateInitialAdmin(username, password, confirm string) (bool, error) {
 	if password != confirm {
 		return false, ErrPasswordsDoNotMatch
 	}
 
-	username = normalizeUsername(username)
-
-	if err := validateNewUserInput(username, password); err != nil {
-		return false, err
-	}
-
-	hash, err := bcrypt.GenerateFromPassword(
-		[]byte(password),
-		s.bcryptCost,
-	)
+	username, hash, err := s.newCredentials(username, password)
 	if err != nil {
 		return false, err
 	}
 
-	return s.repository.User.CreateInitialAdmin(
-		username,
-		string(hash),
-	)
+	return s.repository.User.CreateInitialAdmin(username, hash)
 }
 
-func (s *Service) SetSessionCookie(
-	w http.ResponseWriter,
-	sessionID string,
-) {
+func (s *Service) newCredentials(username, password string) (string, string, error) {
+	username = strings.TrimSpace(username)
+	if username == "" || strings.TrimSpace(password) == "" {
+		return "", "", ErrInvalidRegistration
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), s.bcryptCost)
+	if err != nil {
+		return "", "", err
+	}
+
+	return username, string(hash), nil
+}
+
+func (s *Service) SetSessionCookie(w http.ResponseWriter, sessionID string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     SessionCookieName,
 		Value:    sessionID,
@@ -151,22 +129,4 @@ func (s *Service) ClearSessionCookie(w http.ResponseWriter) {
 		Path:   "/",
 		MaxAge: -1,
 	})
-}
-
-func normalizeUsername(username string) string {
-	return strings.TrimSpace(username)
-}
-
-func validateNewUserInput(
-	username, password string,
-) error {
-	if strings.TrimSpace(username) == "" {
-		return ErrInvalidRegistration
-	}
-
-	if strings.TrimSpace(password) == "" {
-		return ErrInvalidRegistration
-	}
-
-	return nil
 }

@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"strings"
 
+	"kogane/internal/database"
 	"kogane/internal/library"
 )
 
-func (h *Handler) Reader(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Reader(w http.ResponseWriter, r *http.Request, session database.Session) {
 	title := r.URL.Query().Get("title")
 	vol := r.URL.Query().Get("vol")
 
@@ -18,18 +19,16 @@ func (h *Handler) Reader(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	manga, ok := h.LibrarySvc.ByTitle(title)
+	manga, ok := h.Library.ByTitle(title)
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
 
-	csrfToken, _ := h.Auth.GetCSRFToken(r)
-
 	h.render(w, "reader.html", map[string]string{
 		"Title":      title,
 		"Vol":        vol,
-		"CSRFToken":  csrfToken,
+		"CSRFToken":  session.CSRFToken,
 		"MangaDexID": manga.MangaDexID,
 	})
 }

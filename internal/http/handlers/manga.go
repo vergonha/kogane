@@ -1,47 +1,47 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
+	"log"
 	"net/http"
+
+	"kogane/internal/database"
 )
 
 func (h *Handler) MangaPreview(w http.ResponseWriter, r *http.Request) {
-	title := r.URL.Query().Get("title")
-
-	manga, ok := h.LibrarySvc.ByTitle(title)
+	manga, ok := h.Library.ByTitle(r.URL.Query().Get("title"))
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-
-	pageURL := h.Config.PublicURL + r.URL.RequestURI()
 
 	h.render(w, "manga_preview.html", map[string]any{
 		"Manga":   manga,
-		"PageURL": pageURL,
+		"PageURL": h.Config.PublicURL + r.URL.RequestURI(),
 	})
 }
 
-func (h *Handler) MangaDetails(w http.ResponseWriter, r *http.Request) {
-	title := r.URL.Query().Get("title")
-
-	manga, ok := h.LibrarySvc.ByTitle(title)
+func (h *Handler) MangaDetails(w http.ResponseWriter, r *http.Request, session database.Session) {
+	manga, ok := h.Library.ByTitle(r.URL.Query().Get("title"))
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
 
-	csrfToken, ok := h.Auth.GetCSRFToken(r)
-	if !ok {
-		http.Error(w, "Invalid session", http.StatusUnauthorized)
+	progress, err := h.Repository.ReadingProgress.GetByUserAndManga(
+		session.UserID,
+		manga.MangaDexID,
+	)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Printf("read progress for %s: %v", manga.MangaDexID, err)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
-	userID, _ := h.Auth.GetSessionUserID(r)
-	progress, err := h.Repository.ReadingProgress.GetByUserAndManga(userID, manga.MangaDexID)
-
 	h.render(w, "manga.html", map[string]any{
 		"Manga":       manga,
-		"CSRFToken":   csrfToken,
+		"CSRFToken":   session.CSRFToken,
 		"Progress":    progress,
 		"HasProgress": err == nil,
 	})

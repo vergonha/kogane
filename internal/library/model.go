@@ -39,15 +39,15 @@ type mangaDexCoverArt struct {
 }
 
 type mangaDexNamedItem struct {
-	ID   string  `json:"id"`
-	Name *string `json:"name"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 func names(items []mangaDexNamedItem) []string {
 	var out []string
 	for _, item := range items {
-		if item.Name != nil && *item.Name != "" {
-			out = append(out, *item.Name)
+		if item.Name != "" {
+			out = append(out, item.Name)
 		}
 	}
 	return out
