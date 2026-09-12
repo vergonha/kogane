@@ -3,14 +3,24 @@ package apphttp
 import (
 	"net/http"
 	"os"
+	"slices"
+	"strings"
 
 	"kogane/internal/auth"
 	"kogane/internal/http/handlers"
-	httpmw "kogane/internal/http/middleware"
 )
 
-// noDirListingFS hides directory listings from http.FileServer: any request
-// resolving to a directory is treated as not found instead of being rendered.
+var socialPreviewBots = []string{
+	"facebookexternalhit",
+	"twitterbot",
+	"discordbot",
+	"whatsapp",
+	"telegrambot",
+	"slackbot",
+	"linkedinbot",
+	"skypeuripreview",
+}
+
 type noDirListingFS struct {
 	http.FileSystem
 }
@@ -34,36 +44,29 @@ func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 
 	mux.HandleFunc("GET /", h.LoginPage)
 	mux.HandleFunc("POST /", h.LoginSubmit)
-	mux.HandleFunc(
-		"POST /logout",
-		httpmw.RequireAuth(authService, h.Logout),
-	)
-	mux.HandleFunc(
-		"GET /dashboard",
-		httpmw.RequireAuth(authService, h.Dashboard),
-	)
-	mux.HandleFunc(
-		"GET /manga",
-		func(w http.ResponseWriter, r *http.Request) {
-			if httpmw.IsSocialPreviewBot(r.UserAgent()) {
-				h.MangaPreview(w, r)
-				return
-			}
-			httpmw.RequireAuth(authService, h.MangaDetails)(w, r)
-		},
-	)
-	mux.HandleFunc(
-		"GET /read",
-		httpmw.RequireAuth(authService, h.Reader),
-	)
-	mux.HandleFunc(
-		"GET /pdf",
-		httpmw.RequireAuth(authService, h.PDF),
-	)
-	mux.HandleFunc(
-		"GET /cover",
-		httpmw.RequireAuth(authService, h.Cover),
-	)
+	mux.HandleFunc("POST /logout", authService.RequireAuth(h.Logout))
+	mux.HandleFunc("GET /dashboard", authService.RequireAuth(h.Dashboard))
+	mux.HandleFunc("GET /read", authService.RequireAuth(h.Reader))
+	mux.HandleFunc("GET /pdf", authService.RequireAuth(h.PDF))
+	mux.HandleFunc("GET /cover", authService.RequireAuth(h.Cover))
+
+	mux.HandleFunc("GET /api/progress", authService.RequireAuth(h.ProgressGetAll))
+	mux.HandleFunc("GET /api/progress/{mangadex_id}", authService.RequireAuth(h.ProgressGet))
+	mux.HandleFunc("POST /api/progress", authService.RequireAuth(h.ProgressUpsert))
+	mux.HandleFunc("POST /api/progress/{mangadex_id}/complete", authService.RequireAuth(h.ProgressComplete))
+	mux.HandleFunc("DELETE /api/progress/{mangadex_id}", authService.RequireAuth(h.ProgressDelete))
+
+	//link previews are fetched by bots that carry no session, so they get the
+	// public og/twitter meta page instead of a redirect to the login form.
+	mangaDetails := authService.RequireAuth(h.MangaDetails)
+	mux.HandleFunc("GET /manga", func(w http.ResponseWriter, r *http.Request) {
+		if isSocialPreviewBot(r.UserAgent()) {
+			h.MangaPreview(w, r)
+			return
+		}
+
+		mangaDetails(w, r)
+	})
 
 	mux.Handle(
 		"GET /ap0/",
@@ -73,26 +76,13 @@ func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 		),
 	)
 
-	mux.HandleFunc(
-		"GET /api/progress",
-		httpmw.RequireAuth(authService, h.ProgressGetAll),
-	)
-	mux.HandleFunc(
-		"GET /api/progress/{mangadex_id}",
-		httpmw.RequireAuth(authService, h.ProgressGet),
-	)
-	mux.HandleFunc(
-		"POST /api/progress",
-		httpmw.RequireAuth(authService, h.ProgressUpsert),
-	)
-	mux.HandleFunc(
-		"POST /api/progress/{mangadex_id}/complete",
-		httpmw.RequireAuth(authService, h.ProgressComplete),
-	)
-	mux.HandleFunc(
-		"DELETE /api/progress/{mangadex_id}",
-		httpmw.RequireAuth(authService, h.ProgressDelete),
-	)
-
 	return mux
+}
+
+func isSocialPreviewBot(userAgent string) bool {
+	ua := strings.ToLower(userAgent)
+
+	return slices.ContainsFunc(socialPreviewBots, func(bot string) bool {
+		return strings.Contains(ua, bot)
+	})
 }
