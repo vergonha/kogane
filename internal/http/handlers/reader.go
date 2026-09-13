@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strings"
 
 	"kogane/internal/database"
 	"kogane/internal/library"
@@ -12,9 +11,7 @@ func (h *Handler) Reader(w http.ResponseWriter, r *http.Request, session databas
 	title := r.URL.Query().Get("title")
 	vol := r.URL.Query().Get("vol")
 
-	if !library.ValidComponent(title) ||
-		!library.ValidComponent(vol) ||
-		!strings.HasSuffix(strings.ToLower(vol), ".pdf") {
+	if !library.ValidComponent(title) {
 		http.Error(w, "Invalid parameters", http.StatusBadRequest)
 		return
 	}
@@ -25,9 +22,15 @@ func (h *Handler) Reader(w http.ResponseWriter, r *http.Request, session databas
 		return
 	}
 
+	if !manga.HasVolume(vol) {
+		http.Error(w, "Invalid parameters", http.StatusBadRequest)
+		return
+	}
+
 	h.render(w, "reader.html", map[string]string{
 		"Title":      title,
 		"Vol":        vol,
+		"VolLabel":   library.VolumeLabel(vol),
 		"CSRFToken":  session.CSRFToken,
 		"MangaDexID": manga.MangaDexID,
 	})

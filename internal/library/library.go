@@ -3,6 +3,7 @@ package library
 import (
 	"encoding/json"
 	"os"
+	"path"
 	"slices"
 	"strings"
 )
@@ -57,4 +58,17 @@ func ValidComponent(value string) bool {
 
 	return !strings.Contains(value, "..") &&
 		!strings.ContainsAny(value, `/\`)
+}
+
+// HasVolume reports whether vol is one of the manga's volume keys. Volume
+// paths may contain nested folders, so the only safe check is membership in
+// the library entry itself, not path-shape validation.
+func (m Manga) HasVolume(vol string) bool {
+	return slices.Contains(m.Volumes, vol)
+}
+
+// VolumeLabel is the display name of a volume key: volumes can live in nested
+// folders, but only the file name is worth showing.
+func VolumeLabel(vol string) string {
+	return strings.TrimSuffix(path.Base(vol), ".pdf")
 }
