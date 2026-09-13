@@ -75,7 +75,7 @@ func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request, session
 		Page:   body.Page,
 	})
 	if err != nil {
-		log.Printf("upsert progress for %s: %v", body.Title, err)
+		log.Printf("upsert progress for user %d: %v", session.UserID, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
@@ -91,7 +91,7 @@ func (h *Handler) ProgressComplete(w http.ResponseWriter, r *http.Request, sessi
 	title := r.PathValue("title")
 
 	if err := h.Repository.ReadingProgress.MarkCompleted(session.UserID, title); err != nil {
-		log.Printf("complete progress for %s: %v", title, err)
+		log.Printf("complete progress for user %d: %v", session.UserID, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
@@ -107,7 +107,7 @@ func (h *Handler) ProgressDelete(w http.ResponseWriter, r *http.Request, session
 	title := r.PathValue("title")
 
 	if err := h.Repository.ReadingProgress.DeleteByUserAndManga(session.UserID, title); err != nil {
-		log.Printf("delete progress for %s: %v", title, err)
+		log.Printf("delete progress for user %d: %v", session.UserID, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
