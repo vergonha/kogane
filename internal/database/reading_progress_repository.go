@@ -8,7 +8,7 @@ import (
 type ReadingProgress struct {
 	ID         int64
 	UserID     int64
-	MangadexID string
+	Title      string
 	Volume     string
 	Page       int
 	Completed  bool
@@ -28,27 +28,27 @@ func (r *ReadingProgressRepository) Upsert(p ReadingProgress) error {
 
 	_, err := r.db.Exec(`
 		INSERT INTO reading_progress
-			(user_id, mangadex_id, volume, page, completed, updated_at)
+			(user_id, title, volume, page, completed, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?)
-		ON CONFLICT(user_id, mangadex_id) DO UPDATE SET
+		ON CONFLICT(user_id, title) DO UPDATE SET
 			volume     = excluded.volume,
 			page   	   = excluded.page,
 			completed  = excluded.completed,
 			updated_at = excluded.updated_at
-	`, p.UserID, p.MangadexID, p.Volume, p.Page, p.Completed, p.UpdatedAt)
+	`, p.UserID, p.Title, p.Volume, p.Page, p.Completed, p.UpdatedAt)
 
 	return err
 }
 
-func (r *ReadingProgressRepository) GetByUserAndManga(userID int64, mangadexID string) (ReadingProgress, error) {
+func (r *ReadingProgressRepository) GetByUserAndManga(userID int64, title string) (ReadingProgress, error) {
 	var p ReadingProgress
 
 	err := r.db.QueryRow(`
-		SELECT id, user_id, mangadex_id, volume, page, completed, updated_at
+		SELECT id, user_id, title, volume, page, completed, updated_at
 		FROM reading_progress
-		WHERE user_id = ? AND mangadex_id = ?
-	`, userID, mangadexID).Scan(
-		&p.ID, &p.UserID, &p.MangadexID, &p.Volume, &p.Page, &p.Completed, &p.UpdatedAt,
+		WHERE user_id = ? AND title = ?
+	`, userID, title).Scan(
+		&p.ID, &p.UserID, &p.Title, &p.Volume, &p.Page, &p.Completed, &p.UpdatedAt,
 	)
 
 	return p, err
@@ -56,7 +56,7 @@ func (r *ReadingProgressRepository) GetByUserAndManga(userID int64, mangadexID s
 
 func (r *ReadingProgressRepository) GetAllByUser(userID int64) ([]ReadingProgress, error) {
 	rows, err := r.db.Query(`
-		SELECT id, user_id, mangadex_id, volume, page, completed, updated_at
+		SELECT id, user_id, title, volume, page, completed, updated_at
 		FROM reading_progress
 		WHERE user_id = ?
 		ORDER BY updated_at DESC
@@ -70,7 +70,7 @@ func (r *ReadingProgressRepository) GetAllByUser(userID int64) ([]ReadingProgres
 	for rows.Next() {
 		var p ReadingProgress
 		if err := rows.Scan(
-			&p.ID, &p.UserID, &p.MangadexID, &p.Volume, &p.Page, &p.Completed, &p.UpdatedAt,
+			&p.ID, &p.UserID, &p.Title, &p.Volume, &p.Page, &p.Completed, &p.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -80,20 +80,20 @@ func (r *ReadingProgressRepository) GetAllByUser(userID int64) ([]ReadingProgres
 	return results, rows.Err()
 }
 
-func (r *ReadingProgressRepository) MarkCompleted(userID int64, mangadexID string) error {
+func (r *ReadingProgressRepository) MarkCompleted(userID int64, title string) error {
 	_, err := r.db.Exec(`
 		UPDATE reading_progress
 		SET completed = 1, updated_at = ?
-		WHERE user_id = ? AND mangadex_id = ?
-	`, time.Now().Unix(), userID, mangadexID)
+		WHERE user_id = ? AND title = ?
+	`, time.Now().Unix(), userID, title)
 
 	return err
 }
 
-func (r *ReadingProgressRepository) DeleteByUserAndManga(userID int64, mangadexID string) error {
+func (r *ReadingProgressRepository) DeleteByUserAndManga(userID int64, title string) error {
 	_, err := r.db.Exec(`
-		DELETE FROM reading_progress WHERE user_id = ? AND mangadex_id = ?
-	`, userID, mangadexID)
+		DELETE FROM reading_progress WHERE user_id = ? AND title = ?
+	`, userID, title)
 
 	return err
 }

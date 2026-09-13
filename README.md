@@ -26,10 +26,10 @@ i didn't want to ship something that falls over the first time someone pokes at 
 
 already in place:
 - [x] bcrypt for passwords, plus a dummy hash check on unknown usernames so login timing doesn't leak whether an account exists
-- [x] every title/vol from a query string goes through `library.ValidComponent` before touching an r2 key, avoiding path traversal
+- [x] titles from a query string go through `library.ValidComponent` before touching an r2 key, and volumes have to match an entry in `library.json` exactly, so a nested path can't be talked into escaping its folder
 - [x] turnstile in front of the login form so bots don't get a free swing at credential stuffing
 - [x] app never streams files itself, pdfs and covers only go out as short-lived presigned urls
-- [x] templates go through `html/template`, auto-escaped, so mangadex metadata can't turn into markup
+- [x] templates go through `html/template`, auto-escaped, so provider metadata can't turn into markup
 - [x] session and csrf tokens compared with `crypto/subtle.ConstantTimeCompare`
 - [x] logging in kills every other session that user had open
 - [x] expired sessions rejected on lookup and swept out every 15 minutes
@@ -59,7 +59,7 @@ still missing, fine for now but wouldn't be if this stopped being a one-person s
 | delivery         | short-lived presigned urls, app never serves the files directly |
 | auth             | cookie sessions, csrf tokens, bcrypt                |
 | bot gate         | cloudflare turnstile                               |
-| metadata         | `library.json`, occasionally topped up against the mangadex api |
+| metadata         | `library.json`, occasionally topped up against the kitsu api |
 | front-end        | plain html/css/js, no build step                    |
 | deploy           | github actions builds a binary and rsyncs it to a vps under systemd |
 
@@ -80,10 +80,10 @@ the folder layout mirrors how `cmd/server/main.go` wires things up. `config` rea
 | `GET`    | `/pdf`                                    | redirects to a presigned r2 url             |
 | `GET`    | `/cover`                                  | cover art                                   |
 | `GET`    | `/api/progress`                           | reading progress, everything                |
-| `GET`    | `/api/progress/{mangadex_id}`             | reading progress for one title              |
+| `GET`    | `/api/progress/{title}`                   | reading progress for one title              |
 | `POST`   | `/api/progress`                           | save progress                               |
-| `POST`   | `/api/progress/{mangadex_id}/complete`    | mark a title as finished                    |
-| `DELETE` | `/api/progress/{mangadex_id}`             | wipe stored progress                        |
+| `POST`   | `/api/progress/{title}/complete`          | mark a title as finished                    |
+| `DELETE` | `/api/progress/{title}`                   | wipe stored progress                        |
 
 anything past `/` needs a session, and the api routes also need a valid csrf token.
 
@@ -148,12 +148,13 @@ log in, click into a title, open a volume, flip through a few pages, close it. g
 - [x] manga detail page and the library grid redesign
 - [x] moved off `mattn/go-sqlite3` (cgo) onto `modernc.org/sqlite`
 - [x] rate limit on login
-- [ ] better handling for `library.json` entries missing mangadex metadata
+- [x] volumes can live in nested folders inside a title's bucket prefix, not just at its root
+- [x] moved the catalog metadata off mangadex onto kitsu, and reading progress off `mangadex_id` onto the title
 - [ ] rewriting the css, most of it is inherited from a 2023 version of this idea and it shows
-- [ ] og:image previews currently hotlink covers from mangadex's CDN, switch to serving covers from our own r2 bucket once there's a public (or signed, low-ttl) route for them
+- [ ] og:image previews currently hotlink covers from kitsu's CDN, switch to serving covers from our own r2 bucket once there's a public (or signed, low-ttl) route for them
 
 ---
 
 ### notes ──
 
-this isn't multi-tenant and it's not going to be. one admin manages the user list, that's the whole model. `library.json` is the source of truth for the catalog, so anything listed there needs a matching folder in the bucket or it just won't resolve. reading progress lives entirely in sqlite, separate from the library metadata, so wiping one doesn't touch the other.
+this isn't multi-tenant and it's not going to be. one admin manages the user list, that's the whole model. `library.json` is the source of truth for the catalog, so anything listed there needs a matching object in the bucket or it just won't resolve. a volume entry is the key relative to the title's folder, so it can point at a subfolder and usually does for loose chapters. reading progress lives entirely in sqlite, separate from the library metadata, so wiping one doesn't touch the other.

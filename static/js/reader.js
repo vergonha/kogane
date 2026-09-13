@@ -6,7 +6,6 @@ const cfg = window.READER_CONFIG;
 const title = cfg.title;
 const vol = cfg.vol;
 const CSRF = cfg.csrf;
-const MANGADEX_ID = cfg.mangadexId;
 
 const readerContainer = document.getElementById('readerContainer');
 const wrapper = document.getElementById('pagesWrapper');
@@ -165,9 +164,8 @@ async function showPage(num) {
 
 
 async function fetchProgress() {
-  if (!MANGADEX_ID) return 1;
   try {
-    const res = await fetch(`/api/progress/${MANGADEX_ID}`);
+    const res = await fetch(`/api/progress/${encodeURIComponent(title)}`);
     if (!res.ok) return 1;
     const data = await res.json();
     return String(data.Volume) === String(vol) ? (data.Page ?? 1) : 1;
@@ -180,19 +178,17 @@ function sendProgress(page) {
   fetch('/api/progress', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
-    body: JSON.stringify({ mangadex_id: MANGADEX_ID, volume: vol, page }),
+    body: JSON.stringify({ title, volume: vol, page }),
     keepalive: true,
   }).catch(() => { });
 }
 
 function saveProgress(page) {
-  if (!MANGADEX_ID) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => sendProgress(page), 1500);
 }
 
 function flushProgress() {
-  if (!MANGADEX_ID) return;
   clearTimeout(saveTimer);
   sendProgress(currentPage);
 }

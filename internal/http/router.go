@@ -51,10 +51,10 @@ func NewRouter(h *handlers.Handler, authService *auth.Service) http.Handler {
 	mux.HandleFunc("GET /cover", authService.RequireAuth(h.Cover))
 
 	mux.HandleFunc("GET /api/progress", authService.RequireAuth(h.ProgressGetAll))
-	mux.HandleFunc("GET /api/progress/{mangadex_id}", authService.RequireAuth(h.ProgressGet))
+	mux.HandleFunc("GET /api/progress/{title}", authService.RequireAuth(h.ProgressGet))
 	mux.HandleFunc("POST /api/progress", authService.RequireAuth(h.ProgressUpsert))
-	mux.HandleFunc("POST /api/progress/{mangadex_id}/complete", authService.RequireAuth(h.ProgressComplete))
-	mux.HandleFunc("DELETE /api/progress/{mangadex_id}", authService.RequireAuth(h.ProgressDelete))
+	mux.HandleFunc("POST /api/progress/{title}/complete", authService.RequireAuth(h.ProgressComplete))
+	mux.HandleFunc("DELETE /api/progress/{title}", authService.RequireAuth(h.ProgressDelete))
 
 	//link previews are fetched by bots that carry no session, so they get the
 	// public og/twitter meta page instead of a redirect to the login form.

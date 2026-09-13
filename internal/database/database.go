@@ -61,12 +61,12 @@ func Init(db *sql.DB) error {
 		CREATE TABLE IF NOT EXISTS reading_progress (
     		id          INTEGER PRIMARY KEY,
     		user_id     INTEGER NOT NULL,
-    		mangadex_id TEXT    NOT NULL,
+    		title       TEXT    NOT NULL,
     		volume      TEXT    NOT NULL,
     		page        INTEGER NOT NULL DEFAULT 1,
     		completed   INTEGER NOT NULL DEFAULT 0,
     		updated_at  INTEGER NOT NULL,
-    		UNIQUE(user_id, mangadex_id)
+    		UNIQUE(user_id, title)
 		);
 	`)
 

@@ -31,10 +31,10 @@ func (h *Handler) MangaDetails(w http.ResponseWriter, r *http.Request, session d
 
 	progress, err := h.Repository.ReadingProgress.GetByUserAndManga(
 		session.UserID,
-		manga.MangaDexID,
+		manga.Title,
 	)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		log.Printf("read progress for %s: %v", manga.MangaDexID, err)
+		log.Printf("read progress for %s: %v", manga.Title, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}

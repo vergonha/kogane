@@ -10,8 +10,8 @@ import (
 
 type Library []Manga
 
-func Load(path string) (Library, error) {
-	data, err := os.ReadFile(path)
+func Load(filename string) (Library, error) {
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +22,7 @@ func Load(path string) (Library, error) {
 	}
 
 	for i := range mangas {
-		mangas[i].fillFromMangaDex()
+		mangas[i].fillFromMetadata()
 	}
 
 	// Entries with a cover render first on the dashboard grid.
