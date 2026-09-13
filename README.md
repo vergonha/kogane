@@ -36,6 +36,8 @@ already in place:
 - [x] cookies set `HttpOnly`, `SameSite=Lax`, and `Secure` outside dev mode
 - [x] parameterized queries everywhere
 - [x] dependency CVE scanning in CI
+- [x] read/write/idle timeouts on the server, go's defaults are none and a slow connection otherwise sits on a goroutine forever
+- [x] missing turnstile keys fail at startup instead of on the first login
 
 still missing, fine for now but wouldn't be if this stopped being a one-person server:
 - [ ] 2fa
@@ -43,8 +45,6 @@ still missing, fine for now but wouldn't be if this stopped being a one-person s
 - [ ] login audit trail
 - [ ] security headers, CSP, HSTS, would need to live here or in whatever sits in front of it
 - [ ] real password validation, right now it's just "not empty"
-- [ ] timeouts on `http.ListenAndServe`, it's running go's defaults which is to say none
-- [ ] fix `Turnstile.Verify` calling `log.Fatal` on a missing secret key, kills the whole process on the first login instead of failing just that request, this one's an actual bug
 
 ---
 

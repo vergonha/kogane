@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"kogane/internal/auth"
 	"kogane/internal/config"
@@ -80,6 +81,15 @@ func main() {
 		Repository: repository,
 	}
 
+	server := &http.Server{
+		Addr:              cfg.Addr,
+		Handler:           apphttp.NewRouter(h, authService),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
 	log.Printf("Server running on %s (development: %v)", cfg.Addr, cfg.Development)
-	log.Fatal(http.ListenAndServe(cfg.Addr, apphttp.NewRouter(h, authService)))
+	log.Fatal(server.ListenAndServe())
 }
