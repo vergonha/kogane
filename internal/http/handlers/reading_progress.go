@@ -33,7 +33,7 @@ func (h *Handler) ProgressGetAll(w http.ResponseWriter, r *http.Request, session
 func (h *Handler) ProgressGet(w http.ResponseWriter, r *http.Request, session database.Session) {
 	progress, err := h.Repository.ReadingProgress.GetByUserAndManga(
 		session.UserID,
-		r.PathValue("mangadex_id"),
+		r.PathValue("title"),
 	)
 	if err != nil {
 		http.Error(w, "Not found", http.StatusNotFound)
@@ -49,25 +49,33 @@ func (h *Handler) ProgressUpsert(w http.ResponseWriter, r *http.Request, session
 	}
 
 	var body struct {
-		MangadexID string `json:"mangadex_id"`
-		Volume     string `json:"volume"`
-		Page       int    `json:"page"`
+		Title  string `json:"title"`
+		Volume string `json:"volume"`
+		Page   int    `json:"page"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil ||
-		body.MangadexID == "" || body.Volume == "" || body.Page < 1 {
+		body.Volume == "" || body.Page < 1 {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	// progress is keyed on the title, so only titles the library actually has
+	// get a row.
+	manga, ok := h.Library.ByTitle(body.Title)
+	if !ok || !manga.HasVolume(body.Volume) {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
 		return
 	}
 
 	err := h.Repository.ReadingProgress.Upsert(database.ReadingProgress{
-		UserID:     session.UserID,
-		MangadexID: body.MangadexID,
-		Volume:     body.Volume,
-		Page:       body.Page,
+		UserID: session.UserID,
+		Title:  body.Title,
+		Volume: body.Volume,
+		Page:   body.Page,
 	})
 	if err != nil {
-		log.Printf("upsert progress for %s: %v", body.MangadexID, err)
+		log.Printf("upsert progress for %s: %v", body.Title, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
@@ -80,10 +88,10 @@ func (h *Handler) ProgressComplete(w http.ResponseWriter, r *http.Request, sessi
 		return
 	}
 
-	mangadexID := r.PathValue("mangadex_id")
+	title := r.PathValue("title")
 
-	if err := h.Repository.ReadingProgress.MarkCompleted(session.UserID, mangadexID); err != nil {
-		log.Printf("complete progress for %s: %v", mangadexID, err)
+	if err := h.Repository.ReadingProgress.MarkCompleted(session.UserID, title); err != nil {
+		log.Printf("complete progress for %s: %v", title, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
@@ -96,10 +104,10 @@ func (h *Handler) ProgressDelete(w http.ResponseWriter, r *http.Request, session
 		return
 	}
 
-	mangadexID := r.PathValue("mangadex_id")
+	title := r.PathValue("title")
 
-	if err := h.Repository.ReadingProgress.DeleteByUserAndManga(session.UserID, mangadexID); err != nil {
-		log.Printf("delete progress for %s: %v", mangadexID, err)
+	if err := h.Repository.ReadingProgress.DeleteByUserAndManga(session.UserID, title); err != nil {
+		log.Printf("delete progress for %s: %v", title, err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}

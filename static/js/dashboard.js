@@ -107,8 +107,8 @@ const readingList    = document.getElementById('reading-now-list');
 const readingSection = document.getElementById('reading-now');
 const readingCount   = document.getElementById('reading-now-count');
 
-const mangaById = Object.fromEntries(
-    mangaItems.map(el => [el.dataset.mangadexId, el.dataset])
+const mangaByTitle = Object.fromEntries(
+    mangaItems.map(el => [el.dataset.title, el.dataset])
 );
 
 function refreshReadingCount() {
@@ -121,7 +121,6 @@ function buildReadingCard(manga, entry) {
     const { title, cover } = manga;
     const vol  = entry.volume ?? entry.Volume;
     const page = entry.page   ?? entry.Page;
-    const id   = entry.mangadex_id ?? entry.MangadexID;
 
     const link     = document.createElement('a');
     link.href      = `/manga?title=${encodeURIComponent(title)}`;
@@ -149,7 +148,7 @@ function buildReadingCard(manga, entry) {
         e.preventDefault();
         e.stopPropagation();
         try {
-            await fetch(`/api/progress/${encodeURIComponent(id)}`, {
+            await fetch(`/api/progress/${encodeURIComponent(title)}`, {
                 method: 'DELETE',
                 headers: { 'X-CSRF-Token': CSRF },
             });
@@ -180,8 +179,7 @@ function buildReadingCard(manga, entry) {
         if (!Array.isArray(entries) || !entries.length) return;
 
         for (const entry of entries) {
-            const id    = entry.mangadex_id ?? entry.MangadexID;
-            const manga = mangaById[id];
+            const manga = mangaByTitle[entry.Title];
             if (!manga) continue;
 
             readingList.appendChild(buildReadingCard(manga, entry));

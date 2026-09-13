@@ -1,6 +1,5 @@
 const cfg = window.MANGA_CONFIG;
 const TITLE = cfg.title;
-const MANGADEX_ID = cfg.mangadexId;
 
 const searchInput = document.getElementById('volume-search');
 const listEl = document.getElementById('volume-list');

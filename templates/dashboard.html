@@ -69,9 +69,7 @@
         <div id="manga-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8">
             {{range .Mangas}}
 
-            {{/* ---- prefer top-level fields, fall back to the mangadex block ---- */}}
             {{$demo := .PublicationDemographic}}
-            {{if not $demo}}{{if .MangaDex}}{{$demo = .MangaDex.PublicationDemographic}}{{end}}{{end}}
 
             {{$kind := ""}}
             {{if eq .OriginalLanguage "ja"}}{{$kind = "manga"}}
@@ -83,10 +81,9 @@
             <a href="/manga?title={{.Title}}"
                 class="manga-item group flex flex-col gap-2 focus:outline-none"
                 data-title="{{.Title}}"
-                data-mangadex-id="{{.MangaDexID}}"
                 data-cover="{{.Cover}}"
-                data-tags="{{if .Tags}}{{range .Tags}}{{.}}, {{end}}{{else if .MangaDex}}{{range .MangaDex.Tags}}{{.Name}}, {{end}}{{end}}"
-                data-authors="{{if .Authors}}{{range .Authors}}{{.}}, {{end}}{{else if .MangaDex}}{{range .MangaDex.Authors}}{{.Name}}, {{end}}{{end}}">
+                data-tags="{{range .Tags}}{{.}}, {{end}}"
+                data-authors="{{range .Authors}}{{.}}, {{end}}">
 
                 <div
                     class="relative w-full aspect-[2/3] bg-neutral-800/40 border border-neutral-800 rounded overflow-hidden group-hover:border-neutral-600 group-focus:border-neutral-500 transition">
@@ -121,20 +118,13 @@
                 <h2 class="manga-title text-[13px] text-neutral-300 font-bold leading-snug line-clamp-2 group-hover:text-white transition">
                     {{.Title}}</h2>
 
-                {{/* tags: top-level first, mangadex second, and nothing at all is fine */}}
                 {{if .Tags}}
                 <div class="flex flex-wrap gap-1">
                     {{range $i, $t := .Tags}}{{if lt $i 3}}
                     <span class="text-[9px] text-neutral-500 border border-neutral-800 rounded-sm px-1.5 py-0.5 leading-none">{{$t}}</span>
                     {{end}}{{end}}
                 </div>
-                {{else if .MangaDex}}{{if .MangaDex.Tags}}
-                <div class="flex flex-wrap gap-1">
-                    {{range $i, $t := .MangaDex.Tags}}{{if lt $i 3}}
-                    <span class="text-[9px] text-neutral-500 border border-neutral-800 rounded-sm px-1.5 py-0.5 leading-none">{{$t.Name}}</span>
-                    {{end}}{{end}}
-                </div>
-                {{end}}{{end}}
+                {{end}}
 
                 <p class="text-[10px] text-neutral-600 leading-none">
                     {{if .Year}}{{.Year}}{{end}}{{if and .Year .Status}} · {{end}}{{if .Status}}{{.Status}}{{end}}

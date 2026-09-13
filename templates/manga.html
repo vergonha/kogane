@@ -38,7 +38,6 @@
 
     <main class="max-w-3xl w-full mx-auto flex-grow space-y-10"
         data-title="{{.Manga.Title}}"
-        data-mangadex-id="{{.Manga.MangaDexID}}"
         id="manga-page">
 
         <section id="manga-header" class="relative">
@@ -149,7 +148,6 @@
     <script>
         window.MANGA_CONFIG = {
             title: {{.Manga.Title}},
-            mangadexId: {{.Manga.MangaDexID}},
             volumes: {{.Manga.Volumes}},
             progress: {{if .HasProgress}}{
                 Volume: {{.Progress.Volume}},

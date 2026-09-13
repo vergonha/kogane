@@ -28,10 +28,9 @@ func (h *Handler) Reader(w http.ResponseWriter, r *http.Request, session databas
 	}
 
 	h.render(w, "reader.html", map[string]string{
-		"Title":      title,
-		"Vol":        vol,
-		"VolLabel":   library.VolumeLabel(vol),
-		"CSRFToken":  session.CSRFToken,
-		"MangaDexID": manga.MangaDexID,
+		"Title":     title,
+		"Vol":       vol,
+		"VolLabel":  library.VolumeLabel(vol),
+		"CSRFToken": session.CSRFToken,
 	})
 }
