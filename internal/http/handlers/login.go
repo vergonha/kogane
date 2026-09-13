@@ -30,6 +30,13 @@ func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
+	ip := auth.ClientIP(r)
+	if !h.Logins.Allow(ip) {
+		log.Printf("login rate limit hit for %s", ip)
+		http.Error(w, "Too many login attempts", http.StatusTooManyRequests)
+		return
+	}
+
 	adminExists, err := h.Auth.AdminExists()
 	if err != nil {
 		log.Printf("check admin: %v", err)
@@ -63,6 +70,8 @@ func (h *Handler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	if !h.startSession(w, userID) {
 		return
 	}
+
+	h.Logins.Reset(ip)
 
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }

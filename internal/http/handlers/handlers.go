@@ -22,6 +22,7 @@ type Handler struct {
 	Storage    *storage.Client
 	Library    library.Library
 	Repository *database.Repository
+	Logins     *auth.Limiter
 }
 
 func (h *Handler) render(w http.ResponseWriter, name string, data any) {

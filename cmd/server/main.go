@@ -79,6 +79,7 @@ func main() {
 		Storage:    r2,
 		Library:    lib,
 		Repository: repository,
+		Logins:     auth.NewLimiter(auth.LoginAttemptLimit, auth.LoginAttemptWindow),
 	}
 
 	server := &http.Server{

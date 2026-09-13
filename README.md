@@ -38,10 +38,10 @@ already in place:
 - [x] dependency CVE scanning in CI
 - [x] read/write/idle timeouts on the server, go's defaults are none and a slow connection otherwise sits on a goroutine forever
 - [x] missing turnstile keys fail at startup instead of on the first login
+- [x] login attempts capped at 10 per client every 15 minutes, in memory
 
 still missing, fine for now but wouldn't be if this stopped being a one-person server:
 - [ ] 2fa
-- [ ] rate limiting on login, turnstile alone won't stop a patient human doing it by hand
 - [ ] login audit trail
 - [ ] security headers, CSP, HSTS, would need to live here or in whatever sits in front of it
 - [ ] real password validation, right now it's just "not empty"
@@ -147,7 +147,7 @@ log in, click into a title, open a volume, flip through a few pages, close it. g
 - [x] per-user reading progress
 - [x] manga detail page and the library grid redesign
 - [x] moved off `mattn/go-sqlite3` (cgo) onto `modernc.org/sqlite`
-- [ ] some kind of rate limit on login, turnstile alone isn't enough forever
+- [x] rate limit on login
 - [ ] better handling for `library.json` entries missing mangadex metadata
 - [ ] rewriting the css, most of it is inherited from a 2023 version of this idea and it shows
 - [ ] og:image previews currently hotlink covers from mangadex's CDN, switch to serving covers from our own r2 bucket once there's a public (or signed, low-ttl) route for them
