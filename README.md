@@ -35,9 +35,9 @@ already in place:
 - [x] expired sessions rejected on lookup and swept out every 15 minutes
 - [x] cookies set `HttpOnly`, `SameSite=Lax`, and `Secure` outside dev mode
 - [x] parameterized queries everywhere
+- [x] dependency CVE scanning in CI
 
 still missing, fine for now but wouldn't be if this stopped being a one-person server:
-- [ ] dependency CVE scanning in CI
 - [ ] 2fa
 - [ ] rate limiting on login, turnstile alone won't stop a patient human doing it by hand
 - [ ] login audit trail
