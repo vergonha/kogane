@@ -24,11 +24,9 @@ function compareSortKeys(a, b) {
     return 0;
 }
 
-function volumeLabel(filename, num) {
-    // if (num !== null) return `Vol. ${String(num).padStart(2, '0')}`;
-    // return filename.replace(/\.pdf$/i, '');
-
-    return filename
+function volumeLabel(filename) {
+    // volumes can sit in nested folders; only the file name is worth showing.
+    return filename.split('/').pop();
 }
 
 function readerLink(filename) {
@@ -38,7 +36,7 @@ function readerLink(filename) {
 const volumes = (cfg.volumes || [])
     .map(filename => {
         const num = volumeNumber(filename);
-        return { filename, num, label: volumeLabel(filename, num) };
+        return { filename, num, label: volumeLabel(filename) };
     })
     .sort((a, b) => compareSortKeys(sortKey(a.filename), sortKey(b.filename)));
 

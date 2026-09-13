@@ -3,7 +3,6 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"kogane/internal/database"
@@ -14,9 +13,13 @@ func (h *Handler) PDF(w http.ResponseWriter, r *http.Request, _ database.Session
 	title := r.URL.Query().Get("title")
 	vol := r.URL.Query().Get("vol")
 
-	if !library.ValidComponent(title) ||
-		!library.ValidComponent(vol) ||
-		!strings.HasSuffix(strings.ToLower(vol), ".pdf") {
+	if !library.ValidComponent(title) {
+		http.Error(w, "Invalid parameters", http.StatusBadRequest)
+		return
+	}
+
+	manga, ok := h.Library.ByTitle(title)
+	if !ok || !manga.HasVolume(vol) {
 		http.Error(w, "Invalid parameters", http.StatusBadRequest)
 		return
 	}
