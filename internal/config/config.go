@@ -1,7 +1,8 @@
 package config
 
 import (
-	"fmt"
+	"cmp"
+	"errors"
 	"os"
 	"strings"
 	"time"
@@ -36,8 +37,8 @@ type Config struct {
 func Load() (Config, error) {
 	cfg := Config{
 		Development:        os.Getenv("KOGANE_DEVELOPMENT") == "true",
-		Addr:               envOr("KOGANE_SERVER_PORT", ":8080"),
-		PublicURL:          strings.TrimSuffix(envOr("KOGANE_PUBLIC_URL", DefaultPublicURL), "/"),
+		Addr:               cmp.Or(os.Getenv("KOGANE_SERVER_PORT"), ":8080"),
+		PublicURL:          strings.TrimSuffix(cmp.Or(os.Getenv("KOGANE_PUBLIC_URL"), DefaultPublicURL), "/"),
 		DBDSN:              DBDSN(),
 		TurnstileSecretKey: os.Getenv("CLOUDFLARE_TURNSTILE_SECRET_KEY"),
 		TurnstileSiteKey:   os.Getenv("CLOUDFLARE_TURNSTILE_SITE_KEY"),
@@ -45,8 +46,8 @@ func Load() (Config, error) {
 		R2AccountID:        os.Getenv("R2_ACCOUNT_ID"),
 		R2AccessKeyID:      os.Getenv("R2_ACCESS_KEY_ID"),
 		R2SecretAccessKey:  os.Getenv("R2_SECRET_ACCESS_KEY"),
-		LibraryPath:        envOr("KOGANE_LIBRARY_PATH", DefaultLibraryPath),
-		TemplatesGlob:      envOr("KOGANE_TEMPLATES_GLOB", DefaultTemplatesGlob),
+		LibraryPath:        cmp.Or(os.Getenv("KOGANE_LIBRARY_PATH"), DefaultLibraryPath),
+		TemplatesGlob:      cmp.Or(os.Getenv("KOGANE_TEMPLATES_GLOB"), DefaultTemplatesGlob),
 		SessionDuration:    DefaultSessionDuration,
 		BcryptCost:         DefaultBcryptCost,
 	}
@@ -55,8 +56,16 @@ func Load() (Config, error) {
 		cfg.R2AccountID == "" ||
 		cfg.R2AccessKeyID == "" ||
 		cfg.R2SecretAccessKey == "" {
-		return Config{}, fmt.Errorf(
+		return Config{}, errors.New(
 			"R2_BUCKET_NAME, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY must be configured",
+		)
+	}
+
+	// Every login goes through Turnstile, so missing keys must fail at startup
+	// rather than on the first sign-in attempt.
+	if cfg.TurnstileSecretKey == "" || cfg.TurnstileSiteKey == "" {
+		return Config{}, errors.New(
+			"CLOUDFLARE_TURNSTILE_SECRET_KEY and CLOUDFLARE_TURNSTILE_SITE_KEY must be configured",
 		)
 	}
 
@@ -64,13 +73,5 @@ func Load() (Config, error) {
 }
 
 func DBDSN() string {
-	return envOr("KOGANE_DB_DSN", DefaultDBDSN)
-}
-
-func envOr(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-
-	return fallback
+	return cmp.Or(os.Getenv("KOGANE_DB_DSN"), DefaultDBDSN)
 }

@@ -19,9 +19,8 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("load .env: %v", err)
 	}
 
 	cfg, err := config.Load()
@@ -36,14 +35,12 @@ func main() {
 	defer db.Close()
 
 	repository := database.NewRepository(db)
+
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
-	go database.StartSessionCleanup(ctx, repository)
+	go database.StartSessionCleanup(ctx, repository.Session)
 
-	renderer, err := apptemplates.New(
-		cfg.TemplatesGlob,
-		cfg.Development,
-	)
+	renderer, err := apptemplates.New(cfg.TemplatesGlob, cfg.Development)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,21 +70,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	turnstileClient := turnstile.New(cfg.TurnstileSecretKey)
+	h := &handlers.Handler{
+		Config:     cfg,
+		Auth:       authService,
+		Renderer:   renderer,
+		Turnstile:  turnstile.New(cfg.TurnstileSecretKey),
+		Storage:    r2,
+		Library:    lib,
+		Repository: repository,
+	}
 
-	h := handlers.New(
-		cfg,
-		authService,
-		renderer,
-		turnstileClient,
-		r2,
-		lib,
-		repository,
-	)
-
-	router := apphttp.NewRouter(h, authService)
-
-	log.Printf("Server running on %s", cfg.Addr)
-	log.Printf("Development mode: %v", cfg.Development)
-	log.Fatal(http.ListenAndServe(cfg.Addr, router))
+	log.Printf("Server running on %s (development: %v)", cfg.Addr, cfg.Development)
+	log.Fatal(http.ListenAndServe(cfg.Addr, apphttp.NewRouter(h, authService)))
 }
